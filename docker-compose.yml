@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # ════════════════════════════════════════════════════════════════
+  # PlexArr Management Suite
+  # ════════════════════════════════════════════════════════════════
+  
+  # PlexArr Backend API - Orchestrates all services
+  plexarr-backend:
+    build: ./backend
+    container_name: plexarr-backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+      - ./generated-config:/app/generated-config
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_PATH=/app/data/plexarr.db
+    restart: unless-stopped
+    networks:
+      - adguard_default
+      - stacks_default
+    labels:
+      - "plexarr.core=true"
+
+  # PlexArr Frontend - Configuration Wizard & Dashboard
+  plexarr-frontend:
+    build: ./frontend
+    container_name: plexarr-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - plexarr-backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+    restart: unless-stopped
+    networks:
+      - adguard_default
+      - stacks_default
+    labels:
+      - "plexarr.core=true"
+
+networks:
+  adguard_default:
+    external: true
+  stacks_default:
+    external: true
+
+x-dockge:
+  urls: []
