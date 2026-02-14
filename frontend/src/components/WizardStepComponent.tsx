@@ -27,7 +27,6 @@ const WizardStepComponent: React.FC<Props> = ({
   deploying
 }) => {
   const [timezones, setTimezones] = useState<string[]>([]);
-  const [formData, setFormData] = useState<any>({});
 
   useEffect(() => {
     if (step.id === WizardStep.SYSTEM) {
