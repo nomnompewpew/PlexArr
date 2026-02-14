@@ -124,6 +124,41 @@ export function generateCompose(config: PlexArrConfig): string {
     };
   }
 
+  if (config.services.nginxProxyManager?.enabled) {
+    services.nginxProxyManager = {
+      image: 'jc21/nginx-proxy-manager:latest',
+      container_name: 'nginx-proxy-manager',
+      environment: env,
+      ports: [
+        `${config.services.nginxProxyManager.port}:81`,
+        '80:80',
+        '443:443'
+      ],
+      volumes: [
+        `${config.storage.config}/nginx-proxy-manager:/data`,
+        `${config.storage.config}/nginx-proxy-manager/letsencrypt:/etc/letsencrypt`,
+      ],
+      restart: 'unless-stopped',
+    };
+  }
+
+  if (config.services.wireguard?.enabled) {
+    services.wireguard = {
+      image: 'linuxserver/wireguard:latest',
+      container_name: 'wireguard',
+      environment: env,
+      ports: [`${config.services.wireguard.port}:51820/udp`],
+      volumes: [
+        `${config.storage.config}/wireguard:/config`,
+      ],
+      cap_add: ['NET_ADMIN', 'SYS_MODULE'],
+      sysctls: {
+        'net.ipv4.conf.all.src_valid_mark': 1
+      },
+      restart: 'unless-stopped',
+    };
+  }
+
   // Attach all non-host-network services to plexarr_default
   for (const [name, svc] of Object.entries(services)) {
     if (!svc.network_mode) {
