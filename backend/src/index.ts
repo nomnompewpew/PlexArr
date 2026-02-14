@@ -8,6 +8,9 @@ import { ApiCoordinationService } from './services/api-coordination.service';
 import configRouter from './routes/config.routes';
 import deployRouter from './routes/deploy.routes';
 import wizardRouter from './routes/wizard.routes';
+import configNewRouter from './routes/config-new.routes';
+import deployNewRouter from './routes/deploy-new.routes';
+import servicesRouter from './routes/services.routes';
 
 // Load environment variables
 dotenv.config();
@@ -45,6 +48,10 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/api/config', configRouter);
 app.use('/api/deploy', deployRouter);
 app.use('/api/wizard', wizardRouter);
+// New roadmap routes
+app.use('/api/config-new', configNewRouter);
+app.use('/api/deploy-new', deployNewRouter);
+app.use('/api/services', servicesRouter);
 
 // Welcome endpoint
 app.get('/api', (req: Request, res: Response) => {
