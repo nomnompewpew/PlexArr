@@ -64,8 +64,8 @@ PlexArr creates a unified media server stack with automatic API coordination bet
                              │ Docker Compose Up
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Docker Networks                              │
-│          adguard_default + stacks_default                       │
+│                    Docker Network                               │
+│                    plexarr_default                              │
 │                                                                 │
 │  All services communicate using container names                 │
 │  (e.g., http://radarr:7878, http://sonarr:8989)                │
@@ -192,8 +192,7 @@ User → Overseerr → Request Movie/Show
 │      Docker Host                        │
 │                                         │
 │  ┌────────────────────────────────┐    │
-│  │  adguard_default network       │    │
-│  │  stacks_default network        │    │
+│  │  plexarr_default network       │    │
 │  │                                 │    │
 │  │  All containers communicate     │    │
 │  │  using container names          │    │

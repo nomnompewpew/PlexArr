@@ -21,8 +21,7 @@ services:
       - DATABASE_PATH=/app/data/plexarr.db
     restart: unless-stopped
     networks:
-      - adguard_default
-      - stacks_default
+      - plexarr_default
     labels:
       - "plexarr.core=true"
 
@@ -38,15 +37,12 @@ services:
       - REACT_APP_API_URL=http://localhost:3001
     restart: unless-stopped
     networks:
-      - adguard_default
-      - stacks_default
+      - plexarr_default
     labels:
       - "plexarr.core=true"
 
 networks:
-  adguard_default:
-    external: true
-  stacks_default:
+  plexarr_default:
     external: true
 
 x-dockge:

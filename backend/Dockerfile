@@ -1,14 +1,30 @@
-FROM node:18-alpine
+FROM node:18-alpine as build
 
 WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install
+
+# Copy source
+COPY tsconfig.json ./
+COPY src ./src
+COPY templates ./templates
+
+# Build the app
+RUN npm run build
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install production dependencies
+COPY package*.json ./
+RUN npm install --omit=dev
 
 # Copy built application
-COPY dist ./dist
-COPY templates ./templates
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/templates ./templates
 
 # Expose port
 EXPOSE 3001

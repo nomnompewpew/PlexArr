@@ -12,6 +12,8 @@ PlexArr unifies the disjointed multiple docker run setup that requires each API 
 - **Network Configuration Help**: Guidance for router/firewall setup
 - **Low Configuration**: Predefined sensible defaults for quick setup
 
+See the [ROADMAP.md](ROADMAP.md) for planned work and in-progress areas.
+
 ## 📦 Included Services
 
 PlexArr manages and coordinates the following services:
@@ -93,7 +95,7 @@ For external access, you'll need to configure:
    - HTTPS: Port 443 (TCP) - if using Nginx  
    - WireGuard: Port 51820 (UDP) - if enabled
 
-2. **Docker Networks**: PlexArr uses `adguard_default` and `stacks_default` networks for container communication
+2. **Docker Networks**: PlexArr uses `plexarr_default` for container communication
 
 ### Service Ports
 
@@ -222,7 +224,7 @@ The services will be automatically connected by the API coordination service.
 
 ### Services not connecting
 
-- Ensure Docker networks `adguard_default` and `stacks_default` exist
+- Ensure Docker network `plexarr_default` exists
 - Check container logs: `docker-compose logs [service-name]`
 - Verify all containers are running: `docker-compose ps`
 

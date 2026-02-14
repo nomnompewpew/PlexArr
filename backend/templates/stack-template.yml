@@ -16,8 +16,7 @@ services:
       - YOUR_NPM_DATA_PATH:/data
       - YOUR_LETSENCRYPT_PATH:/etc/letsencrypt
     networks:
-      - adguard_default
-      - stacks_default
+      - plexarr_default
 
   # ────────────────────────────────────────────────
   # Movie manager – searches, downloads (via Prowlarr), organises movies
@@ -230,13 +229,10 @@ services:
       - PUID=YOUR_UID
       - PGID=YOUR_GID
     networks:
-      - adguard_default
-      - stacks_default
+      - plexarr_default
 
 networks:
-  adguard_default:
-    external: true
-  stacks_default:
+  plexarr_default:
     external: true
 
 x-dockge:

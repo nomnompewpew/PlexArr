@@ -177,7 +177,7 @@ const WizardStepComponent: React.FC<Props> = ({
       <div className="info-box">
         <h3>📡 Network Setup</h3>
         <p>
-          All containers will communicate on shared Docker networks (<code>adguard_default</code> and <code>stacks_default</code>).
+          All containers will communicate on a shared Docker network (<code>plexarr_default</code>).
           This allows automatic service discovery using container names.
         </p>
       </div>

@@ -52,8 +52,7 @@ cd PlexArr
 ### Step 2: Create Docker Networks
 
 ```bash
-docker network create adguard_default
-docker network create stacks_default
+docker network create plexarr_default
 ```
 
 ### Step 3: Start PlexArr
