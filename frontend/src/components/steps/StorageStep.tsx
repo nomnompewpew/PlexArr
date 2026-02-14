@@ -11,22 +11,33 @@ interface StoragePaths {
   music?: string;
 }
 
+interface PathCheckResult {
+  exists: boolean;
+  isDirectory: boolean;
+  writable: boolean;
+}
+
 interface Props {
   paths: StoragePaths;
   onChange: (paths: StoragePaths) => void;
 }
 
 export const StorageStep: React.FC<Props> = ({ paths, onChange }) => {
-  const [checking, setChecking] = useState<Record<string, any>>({});
+  const [checking, setChecking] = useState<Record<string, PathCheckResult>>({});
 
   const checkPath = async (field: string, value: string) => {
-    const res = await fetch('/api/config-new/check-path', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: value }),
-    });
-    const result = await res.json();
-    setChecking(prev => ({ ...prev, [field]: result }));
+    try {
+      const res = await fetch('/api/config-new/check-path', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: value }),
+      });
+      const result = await res.json();
+      setChecking(prev => ({ ...prev, [field]: result }));
+    } catch (err) {
+      console.error('Error checking path:', err);
+      setChecking(prev => ({ ...prev, [field]: { exists: false, isDirectory: false, writable: false } }));
+    }
   };
 
   const update = (field: keyof StoragePaths, value: string) => {

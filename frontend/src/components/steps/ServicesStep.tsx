@@ -8,6 +8,12 @@ interface ServiceConfig {
   apiKey?: string;
 }
 
+interface TestResult {
+  testing?: boolean;
+  success: boolean;
+  message: string;
+}
+
 interface Props {
   services: Record<string, ServiceConfig>;
   onChange: (services: Record<string, ServiceConfig>) => void;
@@ -25,7 +31,7 @@ const SERVICE_INFO: Record<string, { label: string; defaultPort: number; descrip
 };
 
 export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
-  const [testResults, setTestResults] = useState<Record<string, any>>({});
+  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
 
   const toggle = (name: string) => {
     const svc = services[name];
@@ -43,7 +49,7 @@ export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
   };
 
   const testConnection = async (name: string) => {
-    setTestResults(prev => ({ ...prev, [name]: { testing: true } }));
+    setTestResults(prev => ({ ...prev, [name]: { testing: true, success: false, message: 'Testing...' } }));
     try {
       const res = await fetch('/api/services/test', {
         method: 'POST',
@@ -53,7 +59,7 @@ export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
       const result = await res.json();
       setTestResults(prev => ({ ...prev, [name]: result }));
     } catch (err) {
-      setTestResults(prev => ({ ...prev, [name]: { success: false, message: 'Request failed' } }));
+      setTestResults(prev => ({ ...prev, [name]: { testing: false, success: false, message: 'Request failed' } }));
     }
   };
 

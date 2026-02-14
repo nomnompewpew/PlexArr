@@ -1,6 +1,7 @@
 // Dashboard component for stack health monitoring
 
 import React, { useEffect, useState } from 'react';
+import { CoordinationStatus } from '../types/plexarr-config.types';
 
 interface Container {
   Name: string;
@@ -10,7 +11,7 @@ interface Container {
 
 export const Dashboard: React.FC = () => {
   const [containers, setContainers] = useState<Container[]>([]);
-  const [coordStatus, setCoordStatus] = useState<any>(null);
+  const [coordStatus, setCoordStatus] = useState<CoordinationStatus | null>(null);
 
   const refresh = async () => {
     const res = await fetch('/api/deploy-new/status');

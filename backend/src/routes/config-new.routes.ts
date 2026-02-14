@@ -29,7 +29,8 @@ router.get('/', (_req: Request, res: Response) => {
   // redact API keys for the response
   const safe = JSON.parse(JSON.stringify(config));
   for (const svc of Object.values(safe.services)) {
-    if ((svc as any).apiKey) (svc as any).apiKey = '••••••••';
+    const service = svc as { apiKey?: string };
+    if (service.apiKey) service.apiKey = '••••••••';
   }
   res.json(safe);
 });

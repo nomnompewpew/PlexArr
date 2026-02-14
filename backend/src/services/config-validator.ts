@@ -20,10 +20,10 @@ export function validateConfig(config: PlexArrConfig): ValidationError[] {
   }
 
   // --- PUID/PGID ---
-  if (config.system.puid < 0) {
+  if (config.system.puid <= 0) {
     errors.push({ field: 'system.puid', message: 'Must be a positive integer' });
   }
-  if (config.system.pgid < 0) {
+  if (config.system.pgid <= 0) {
     errors.push({ field: 'system.pgid', message: 'Must be a positive integer' });
   }
 

@@ -34,12 +34,21 @@ router.post('/execute', async (req: Request, res: Response) => {
     // Ensure network exists
     try {
       await execAsync('docker network create plexarr_default');
-    } catch { /* already exists */ }
+    } catch (err: any) {
+      // Network might already exist, which is fine
+      if (!err.message?.includes('already exists')) {
+        console.warn('Network creation warning:', err.message);
+      }
+    }
 
     // Create storage directories
     for (const p of Object.values(config.storage)) {
       if (typeof p === 'string' && p.startsWith('/')) {
-        try { fs.mkdirSync(p, { recursive: true }); } catch { /* ignore */ }
+        try { 
+          fs.mkdirSync(p, { recursive: true }); 
+        } catch (err: any) {
+          console.warn(`Failed to create directory ${p}:`, err.message);
+        }
       }
     }
 

@@ -37,3 +37,8 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+# Generated configuration and data
+/backend/generated-config/
+/backend/data/
+/data/

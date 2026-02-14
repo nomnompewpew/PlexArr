@@ -1,12 +1,8 @@
 // API key extraction service for Arr applications
 
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as xml2js from 'xml2js';
-
-const execAsync = promisify(exec);
 
 interface ExtractedKeys {
   [service: string]: string | null;

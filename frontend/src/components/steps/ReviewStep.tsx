@@ -1,9 +1,10 @@
 // Review and deploy step
 
 import React, { useState } from 'react';
+import { PlexArrConfig } from '../../types/plexarr-config.types';
 
 interface Props {
-  config: any; // PlexArrConfig
+  config: PlexArrConfig;
   onDeploy: () => Promise<void>;
 }
 
