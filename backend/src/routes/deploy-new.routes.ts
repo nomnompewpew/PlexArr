@@ -1,6 +1,7 @@
 // Deploy routes with preview, execute, and status
 
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { generateCompose } from '../services/compose-generator';
 import { PlexArrConfig } from '../models/config';
 import { runCoordination } from '../services/coordinator';
@@ -14,6 +15,17 @@ const router = Router();
 
 const OUTPUT_DIR = path.join(process.cwd(), 'generated-config');
 const COMPOSE_PATH = path.join(OUTPUT_DIR, 'docker-compose.yml');
+
+// Rate limiting for deployment endpoints - more restrictive
+const deployLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 deployment operations per windowMs
+  message: 'Too many deployment requests from this IP, please try again later.'
+});
+
+// Apply rate limiting to execute and coordinate endpoints only
+router.post('/execute', deployLimiter);
+router.post('/coordinate', deployLimiter);
 
 // POST /api/deploy/preview - return generated compose YAML
 router.post('/preview', (req: Request, res: Response) => {

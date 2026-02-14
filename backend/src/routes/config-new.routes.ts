@@ -1,6 +1,7 @@
 // Config routes with validation and path checking
 
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { PlexArrConfig } from '../models/config';
 import { createDefaultConfig } from '../models/config-defaults';
 import { validateConfig } from '../services/config-validator';
@@ -9,6 +10,15 @@ import * as path from 'path';
 
 const router = Router();
 const CONFIG_PATH = path.join(process.cwd(), 'data', 'config.json');
+
+// Rate limiting for config endpoints
+const configLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+
+router.use(configLimiter);
 
 function loadConfig(): PlexArrConfig {
   if (fs.existsSync(CONFIG_PATH)) {
