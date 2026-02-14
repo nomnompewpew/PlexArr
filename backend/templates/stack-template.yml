@@ -1,0 +1,243 @@
+version: '3.8'
+
+services:
+  # ────────────────────────────────────────────────
+  # Reverse proxy + Let's Encrypt manager with nice web UI
+  # Handles incoming HTTP/HTTPS traffic and forwards to other services
+  # Admin interface usually at host port 81
+  nomnomsites:
+    image: docker.io/jc21/nginx-proxy-manager:latest
+    restart: unless-stopped
+    ports:
+      - YOUR_ADMIN_PORT:81           # NPM admin dashboard (commonly 81)
+      - YOUR_HTTP_PORT:80            # Public HTTP traffic
+      - YOUR_HTTPS_PORT:443          # Public HTTPS traffic (SSL)
+    volumes:
+      - YOUR_NPM_DATA_PATH:/data
+      - YOUR_LETSENCRYPT_PATH:/etc/letsencrypt
+    networks:
+      - adguard_default
+      - stacks_default
+
+  # ────────────────────────────────────────────────
+  # Movie manager – searches, downloads (via Prowlarr), organises movies
+  radarr:
+    restart: unless-stopped
+    image: lscr.io/linuxserver/radarr:latest
+    ports:
+      - YOUR_RADARR_PORT:7878
+    volumes:
+      - YOUR_RADARR_CONFIG:/config
+      - YOUR_DOWNLOADS_ROOT:/mnt/plex2/downloads             # general incomplete downloads
+      - YOUR_MOVIES_DOWNLOAD_PATH:/mnt/plex2/downloads/movies
+      - YOUR_NZB_PATH:/mnt/music/nzb                         # sometimes used for cross-seed / music
+      - YOUR_MOVIES_LIBRARY:/mnt/plex2/Films
+      - YOUR_COMPLETED_PATH:/mnt/plex2/completed
+      - YOUR_CLASSICS_DOWNLOAD_PATH:/mnt/plex2/downloads/Classics
+    environment:
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+      - TZ=YOUR_TIMEZONE           # e.g. America/Denver, Europe/London, etc.
+
+  # ────────────────────────────────────────────────
+  # Indexer manager – aggregates torrent/usenet indexers for *arr apps
+  prowlarr:
+    restart: unless-stopped
+    image: lscr.io/linuxserver/prowlarr:latest
+    ports:
+      - YOUR_PROWLARR_PORT:9696
+    volumes:
+      - YOUR_MEDIA_ROOT:/mnt/media     # usually just for config & db (Prowlarr is light on storage)
+    environment:
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+      - TZ=YOUR_TIMEZONE
+
+  # ────────────────────────────────────────────────
+  # Plex media server requests & discovery service
+  # Users can request movies/shows → integrates with Radarr/Sonarr
+  overseerr:
+    restart: unless-stopped
+    image: sctx/overseerr:latest
+    ports:
+      - YOUR_OVERSEERR_PORT:5055
+    volumes:
+      - YOUR_OVERSEERR_CONFIG:/app/config
+      - YOUR_PLEX_MEDIA_ROOT:/mnt/plex2
+    environment:
+      - LOG_LEVEL=debug              # can be info/warn/error in production
+      - TZ=YOUR_TIMEZONE
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+
+  # ────────────────────────────────────────────────
+  # Media streaming server (your main Plex instance)
+  plex:
+    restart: unless-stopped
+    image: lscr.io/linuxserver/plex:latest
+    runtime: nvidia                  # only if using GPU transcoding
+    network_mode: host               # common for DLNA, discovery, easier port management
+    volumes:
+      - YOUR_MOVIES_DOWNLOAD_PATH:/mnt/plex2/downloads/movies
+      - YOUR_TV_DOWNLOAD_PATH:/mnt/plex2/downloads/tv
+      - YOUR_DISNEY_DOWNLOAD_PATH:/mnt/plex2/downloads/Disney
+      - YOUR_MUSIC_ROOT:/mnt/music
+      - YOUR_YOUTUBE_MUSIC_PATH:/mnt/music/youtube
+      - YOUR_MOVIES_LIBRARY:/mnt/plex2/Films
+      - YOUR_TV_LIBRARY:/mnt/plex2/Series
+      - YOUR_COMPLETED_TV_PATH:/mnt/plex2/completed/Series   # note: duplicated paths are common mistakes
+      - YOUR_WALKTHROUGHS_PATH:/mnt/plex2/downloads/walkthroughs
+      - YOUR_CLASSICS_DOWNLOAD_PATH:/mnt/plex2/downloads/Classics
+      - YOUR_NEW_MOVIES_PATH:/mnt/plex2/downloads/new-movies
+    environment:
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+      - TZ=YOUR_TIMEZONE
+      - VERSION=docker
+      - PLEX_CLAIM=                    # leave empty or remove after first claim
+      - NVIDIA_VISIBLE_DEVICES=all     # GPU related (if using nvidia runtime)
+      - NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
+
+  # ────────────────────────────────────────────────
+  # TV show manager – similar to Radarr but for series
+  sonarr:
+    restart: unless-stopped
+    image: lscr.io/linuxserver/sonarr:latest
+    ports:
+      - YOUR_SONARR_PORT:8989
+    volumes:
+      - YOUR_DOWNLOADS_ROOT:/mnt/plex2/downloads
+      - YOUR_TV_DOWNLOAD_PATH:/mnt/plex2/downloads/tv
+      - YOUR_NZB_PATH:/mnt/music/nzb
+      - YOUR_TV_LIBRARY:/mnt/plex2/Series
+      - YOUR_COMPLETED_TV_PATH:/mnt/plex2/completed/Series
+    environment:
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+      - TZ=YOUR_TIMEZONE
+
+  # ────────────────────────────────────────────────
+  # Easy WireGuard VPN server with web UI
+  # Provides secure remote access to your home network
+  wg-easy:
+    container_name: wg-easy
+    environment:
+      - LANG=en
+      - WG_HOST=YOUR_PUBLIC_IP_OR_DOMAIN
+      - PASSWORD_HASH=YOUR_BCRYPT_HASH_HERE   # use bcrypt hash, never plain password
+      - PORT=51821                       # web UI port
+      - WG_PORT=51820                    # WireGuard VPN port
+    volumes:
+      - YOUR_WG_CONFIG_PATH:/etc/wireguard
+    ports:
+      - 51820:51820/udp
+      - YOUR_WG_UI_PORT:51821/tcp        # web UI (protect this!)
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    restart: unless-stopped
+    image: ghcr.io/wg-easy/wg-easy
+
+  # ────────────────────────────────────────────────
+  # Music manager (albums, artists – similar to Radarr/Sonarr for music)
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+      - TZ=YOUR_TIMEZONE
+    volumes:
+      - YOUR_LIDARR_CONFIG:/config
+      - YOUR_MUSIC_LIBRARY:/music
+      - YOUR_MUSIC_DOWNLOADS:/downloads
+    ports:
+      - YOUR_LIDARR_PORT:8686
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────────
+  # Usenet downloader (NZB client)
+  nzbget:
+    image: lscr.io/linuxserver/nzbget:latest
+    container_name: nzbget
+    environment:
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+      - TZ=YOUR_TIMEZONE
+      # NZBGET_USER=...
+      # NZBGET_PASS=...               # remove or replace with placeholders if needed
+    volumes:
+      - YOUR_NZBGET_CONFIG:/config
+      - YOUR_MUSIC_DOWNLOADS:/downloads
+    ports:
+      - YOUR_NZBGET1_PORT:6789
+    restart: unless-stopped
+
+  # Second NZBGet instance (possibly for separating music vs movies/tv traffic)
+  nzbget2:
+    image: lscr.io/linuxserver/nzbget:latest
+    container_name: nzbget2
+    environment:
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+      - TZ=YOUR_TIMEZONE
+      # NZBGET_USER=...
+      # NZBGET_PASS=...
+    volumes:
+      - YOUR_NZBGET2_CONFIG:/config
+      - YOUR_PLEX_MEDIA_ROOT:/downloads   # downloads to main media folder
+    ports:
+      - YOUR_NZBGET2_PORT:6789           # different host port
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────────
+  # Automation tool for Lidarr (usually Last.fm based scrobbling → auto-download)
+  lidify:
+    image: thewicklowwolf/lidify:latest
+    container_name: lidify
+    environment:
+      # last_fm_api_key=...
+      # last_fm_api_secret=...
+      - mode=LastFM
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+      - quality_profile_id=1
+      - metadata_profile_id=1
+    volumes:
+      - YOUR_LIDIFY_CONFIG:/lidify/config
+      - /etc/localtime:/etc/localtime:ro
+      - YOUR_CLEAN_MUSIC_PATH:/music
+    ports:
+      - YOUR_LIDIFY_PORT:5000
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────────
+  # Plex library manager - collections, categories, cleanup automation
+  # Helps organize Plex content into categories and automate maintenance
+  maintainerr:
+    image: ghcr.io/jorenn92/maintainerr:latest
+    container_name: maintainerr
+    restart: unless-stopped
+    ports:
+      - YOUR_MAINTAINERR_PORT:6246
+    volumes:
+      - YOUR_MAINTAINERR_CONFIG:/opt/data
+    environment:
+      - TZ=YOUR_TIMEZONE
+      - PUID=YOUR_UID
+      - PGID=YOUR_GID
+    networks:
+      - adguard_default
+      - stacks_default
+
+networks:
+  adguard_default:
+    external: true
+  stacks_default:
+    external: true
+
+x-dockge:
+  urls: []
