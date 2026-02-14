@@ -8,9 +8,9 @@ const router = Router();
 /**
  * GET /api/config - Get current configuration
  */
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
-    const config = dbService.getCurrentConfiguration();
+    const config = await dbService.getCurrentConfiguration();
     
     if (!config) {
       return res.json({
@@ -38,7 +38,7 @@ router.get('/', (req: Request, res: Response) => {
 /**
  * POST /api/config - Save configuration
  */
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const configData: ConfigData = req.body;
     
@@ -51,7 +51,7 @@ router.post('/', (req: Request, res: Response) => {
       config_data: JSON.stringify(configData)
     };
 
-    dbService.saveConfiguration(config);
+    await dbService.saveConfiguration(config);
 
     res.json({
       success: true,
@@ -67,12 +67,12 @@ router.post('/', (req: Request, res: Response) => {
 /**
  * PUT /api/config/:id - Update configuration
  */
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const configData: ConfigData = req.body;
     
-    const existing = dbService.getConfiguration(id);
+    const existing = await dbService.getConfiguration(id);
     if (!existing) {
       return res.status(404).json({ error: 'Configuration not found' });
     }
@@ -85,7 +85,7 @@ router.put('/:id', (req: Request, res: Response) => {
       config_data: JSON.stringify(configData)
     };
 
-    dbService.saveConfiguration(config);
+    await dbService.saveConfiguration(config);
 
     res.json({
       success: true,
@@ -100,9 +100,9 @@ router.put('/:id', (req: Request, res: Response) => {
 /**
  * GET /api/config/api-keys - Get all API keys
  */
-router.get('/api-keys', (req: Request, res: Response) => {
+router.get('/api-keys', async (req: Request, res: Response) => {
   try {
-    const apiKeys = dbService.getAllApiKeys();
+    const apiKeys = await dbService.getAllApiKeys();
     res.json({ apiKeys });
   } catch (error) {
     console.error('Error getting API keys:', error);
@@ -113,7 +113,7 @@ router.get('/api-keys', (req: Request, res: Response) => {
 /**
  * POST /api/config/api-keys/:service - Save API key for a service
  */
-router.post('/api-keys/:service', (req: Request, res: Response) => {
+router.post('/api-keys/:service', async (req: Request, res: Response) => {
   try {
     const { service } = req.params;
     const { apiKey } = req.body;
@@ -122,7 +122,7 @@ router.post('/api-keys/:service', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'API key is required' });
     }
 
-    dbService.saveApiKey(service, apiKey);
+    await dbService.saveApiKey(service, apiKey);
 
     res.json({
       success: true,

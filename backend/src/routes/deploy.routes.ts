@@ -53,7 +53,7 @@ router.post('/start', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Configuration ID is required' });
     }
 
-    const config = dbService.getConfiguration(configId);
+    const config = await dbService.getConfiguration(configId);
     if (!config) {
       return res.status(404).json({ error: 'Configuration not found' });
     }
@@ -62,7 +62,7 @@ router.post('/start', async (req: Request, res: Response) => {
     const deploymentId = uuidv4();
     const dockerComposePath = path.join(__dirname, '../../generated-config/docker-compose.yml');
     
-    dbService.saveDeployment(deploymentId, configId, 'starting', dockerComposePath);
+    await dbService.saveDeployment(deploymentId, configId, 'starting', dockerComposePath);
 
     res.json({
       success: true,
