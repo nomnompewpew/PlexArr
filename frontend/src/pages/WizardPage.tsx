@@ -272,9 +272,6 @@ const WizardPage: React.FC = () => {
     }
   };
 
-  const currentStep = STEPS[currentStepIndex];
-  const progress = ((currentStepIndex + 1) / STEPS.length) * 100;
-
   // Sidebar content with progress tracking
   const renderSidebar = () => (
     <>
