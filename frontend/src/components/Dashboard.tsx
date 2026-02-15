@@ -303,7 +303,7 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'system-ui, sans-serif' }}>
       {/* Request Bar - Always visible at top */}
       <RequestBar onRequest={handleRequestSubmit} />
 
@@ -315,379 +315,532 @@ export const Dashboard: React.FC = () => {
         onClose={() => setRequestModalOpen(false)}
       />
 
-      {/* Main Dashboard Content */}
-      <div style={{ padding: '20px', flex: 1, overflow: 'auto' }}>
-        {/* Header with Navigation */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: '20px',
-          paddingBottom: '15px',
-          borderBottom: '2px solid #dee2e6'
+      {/* Dashboard Layout with Sidebar - Similar to PostDeploymentWizard */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: '#f5f5f5' }}>
+        {/* Sidebar Navigation */}
+        <div style={{
+          width: '300px',
+          background: 'white',
+          borderRight: '1px solid #dee2e6',
+          padding: '20px',
+          overflowY: 'auto',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
         }}>
-          <div>
-            <button 
-              onClick={() => navigate('/wizard')}
-              style={{
-                padding: '8px 16px',
-                cursor: 'pointer',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                marginBottom: '12px',
-                fontSize: '14px'
-              }}
-            >
-              ← Back to Setup Wizard
-            </button>
-            <h2 style={{ margin: 0 }}>PlexArr Stack</h2>
-            {stackStatus && (
-              <p style={{ 
-                margin: '5px 0', 
+          <h2 style={{ fontSize: '18px', margin: '0 0 20px 0', color: '#333' }}>PlexArr Dashboard</h2>
+          
+          {/* Stack Status Info */}
+          {stackStatus && (
+            <div style={{
+              padding: '12px',
+              background: '#f9f9f9',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Stack Status</div>
+              <div style={{
                 fontSize: '14px',
+                fontWeight: 'bold',
                 color: getStatusColor(stackStatus.status)
               }}>
-                Status: <strong>{stackStatus.status}</strong> 
-                {' '}({stackStatus.containers.length} container{stackStatus.containers.length !== 1 ? 's' : ''})
-              </p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-            <button 
-              onClick={toggleAdvanced}
+                {stackStatus.status}
+              </div>
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                {stackStatus.containers.length} container{stackStatus.containers.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Items */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Service Tabs */}
+            {getEnabledTabs().map((tab) => (
+              <div
+                key={tab.key}
+                onClick={() => setSelectedTab(tab.key)}
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  background: selectedTab === tab.key ? '#e3f2fd' : '#f9f9f9',
+                  borderLeft: selectedTab === tab.key ? '4px solid #2196F3' : '4px solid transparent',
+                  paddingLeft: selectedTab === tab.key ? '8px' : '12px'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedTab !== tab.key) {
+                    e.currentTarget.style.background = '#f0f0f0';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedTab !== tab.key) {
+                    e.currentTarget.style.background = '#f9f9f9';
+                  }
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: selectedTab === tab.key ? '#2196F3' : '#e0e0e0',
+                  fontSize: '16px',
+                  flexShrink: 0
+                }}>
+                  {tab.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '14px', color: '#333' }}>{tab.label}</div>
+                  <div style={{ fontSize: '12px', color: '#999' }}>Service Dashboard</div>
+                </div>
+              </div>
+            ))}
+
+            {/* Docker Control Tab */}
+            <div
+              onClick={() => setSelectedTab('docker')}
               style={{
-                padding: '8px 16px',
+                display: 'flex',
+                gap: '12px',
+                padding: '12px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                backgroundColor: showAdvanced ? '#007bff' : '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '14px'
+                transition: 'all 0.2s ease',
+                background: selectedTab === 'docker' ? '#e3f2fd' : '#f9f9f9',
+                borderLeft: selectedTab === 'docker' ? '4px solid #2196F3' : '4px solid transparent',
+                paddingLeft: selectedTab === 'docker' ? '8px' : '12px'
+              }}
+              onMouseEnter={(e) => {
+                if (selectedTab !== 'docker') {
+                  e.currentTarget.style.background = '#f0f0f0';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedTab !== 'docker') {
+                  e.currentTarget.style.background = '#f9f9f9';
+                }
               }}
             >
-              ⚙️ {showAdvanced ? 'Hide' : 'Show'} Advanced
-            </button>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: selectedTab === 'docker' ? '#2196F3' : '#e0e0e0',
+                fontSize: '16px',
+                flexShrink: 0
+              }}>
+                🐳
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: '#333' }}>Docker Control</div>
+                <div style={{ fontSize: '12px', color: '#999' }}>Manage Containers</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #dee2e6' }}>
             <button 
               onClick={refresh}
               style={{
-                padding: '8px 16px',
+                width: '100%',
+                padding: '10px',
                 cursor: 'pointer',
                 backgroundColor: '#0066cc',
                 color: 'white',
                 border: 'none',
-                borderRadius: '4px'
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '600',
+                marginBottom: '8px',
+                transition: 'all 0.2s ease'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0052a3'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0066cc'}
             >
-              🔄 Refresh
+              🔄 Refresh Status
+            </button>
+            <button 
+              onClick={() => navigate('/wizard')}
+              style={{
+                width: '100%',
+                padding: '10px',
+                cursor: 'pointer',
+                backgroundColor: '#f0f0f0',
+                color: '#333',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '600',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e0e0e0'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+            >
+              ← Back to Wizard
             </button>
           </div>
         </div>
 
-        {/* Service Management Tabs */}
-        {getEnabledTabs().length > 0 && (
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ 
-              display: 'flex',
-              gap: '8px',
-              borderBottom: '2px solid #dee2e6',
-              marginBottom: '16px',
-              overflowX: 'auto',
-              paddingBottom: '0'
-            }}>
-              {getEnabledTabs().map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setSelectedTab(tab.key)}
-                  style={{
-                    padding: '12px 16px',
-                    background: selectedTab === tab.key ? '#007bff' : 'transparent',
-                    color: selectedTab === tab.key ? 'white' : '#666',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: selectedTab === tab.key ? '600' : '500',
-                    borderBottom: selectedTab === tab.key ? '3px solid white' : 'none',
-                    transition: 'all 0.3s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedTab !== tab.key) {
-                      e.currentTarget.style.background = '#f0f0f0';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedTab !== tab.key) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}
-                >
-                  {tab.icon} {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab Content - Service IFrame */}
-            {(() => {
-              const activeTab = getEnabledTabs().find(t => t.key === selectedTab);
-              return activeTab ? (
-                <div style={{ height: '75vh', marginBottom: '20px' }}>
-                  <ServiceIframe
-                    serviceName={activeTab.key}
-                    label={activeTab.label}
-                    port={activeTab.port}
-                    basePath={activeTab.basePath}
-                    icon={activeTab.icon}
-                  />
-                </div>
-              ) : null;
-            })()}
-          </div>
-        )}
-
-      {/* Advanced Settings Section */}
-      {showAdvanced && (
-        <div style={{ 
-          marginBottom: '20px',
-          padding: '15px',
-          backgroundColor: '#fff3cd',
-          border: '1px solid #ffc107',
-          borderRadius: '4px'
-        }}>
-          <h3 style={{ marginTop: 0 }}>Advanced Settings</h3>
-          <p style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
-            {config?.system?.projectFolder && (
-              <>Project Folder: <code>{config.system.projectFolder}</code></>
-            )}
-          </p>
-          <p style={{ fontSize: '14px', color: '#666' }}>
-            {config?.network?.publicDomain && (
-              <>Public Domain: <code>{config.network.publicDomain}</code></>
-            )}
-          </p>
-        </div>
-      )}
-
-      
-      <div style={{ 
-        marginBottom: '20px',
-        padding: '15px',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '8px'
-      }}>
-        <h3 style={{ marginTop: 0 }}>Stack Controls</h3>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button 
-            onClick={() => controlStack('start')}
-            disabled={!!controlAction}
-            style={{
-              padding: '8px 16px',
-              cursor: controlAction ? 'not-allowed' : 'pointer',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              opacity: controlAction ? 0.6 : 1
-            }}
-          >
-            ▶️ Start
-          </button>
-          <button 
-            onClick={() => controlStack('stop')}
-            disabled={!!controlAction}
-            style={{
-              padding: '8px 16px',
-              cursor: controlAction ? 'not-allowed' : 'pointer',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              opacity: controlAction ? 0.6 : 1
-            }}
-          >
-            ⏸️ Stop
-          </button>
-          <button 
-            onClick={() => controlStack('restart')}
-            disabled={!!controlAction}
-            style={{
-              padding: '8px 16px',
-              cursor: controlAction ? 'not-allowed' : 'pointer',
-              backgroundColor: '#ffc107',
-              color: 'black',
-              border: 'none',
-              borderRadius: '4px',
-              opacity: controlAction ? 0.6 : 1
-            }}
-          >
-            🔄 Restart
-          </button>
-          <button 
-            onClick={() => controlStack('pull')}
-            disabled={!!controlAction}
-            style={{
-              padding: '8px 16px',
-              cursor: controlAction ? 'not-allowed' : 'pointer',
-              backgroundColor: '#17a2b8',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              opacity: controlAction ? 0.6 : 1
-            }}
-          >
-            ⬇️ Pull Updates
-          </button>
-        </div>
-        {controlAction && (
-          <p style={{ marginTop: '10px', color: '#666' }}>
-            Executing: {controlAction}...
-          </p>
-        )}
-      </div>
-
-      {/* Containers Table */}
-      <div style={{ marginBottom: '20px' }}>
-        <h3>Containers</h3>
-        {stackStatus && stackStatus.containers.length > 0 ? (
-          <table style={{ 
-            width: '100%', 
-            borderCollapse: 'collapse',
-            backgroundColor: 'white',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        {/* Main Content Area */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Content Header */}
+          <div style={{
+            padding: '30px 40px',
+            background: 'white',
+            borderBottom: '1px solid #dee2e6',
+            flexShrink: 0
           }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8f9fa' }}>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Service</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Container</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>State</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Status</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Ports</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stackStatus.containers.map((c, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #dee2e6' }}>
-                  <td style={{ padding: '12px' }}>{c.service}</td>
-                  <td style={{ padding: '12px', fontSize: '12px', color: '#666' }}>{c.name}</td>
-                  <td style={{ 
-                    padding: '12px',
-                    color: getStatusColor(c.state),
-                    fontWeight: 'bold'
-                  }}>
-                    {c.state}
-                    {c.health && ` (${c.health})`}
-                  </td>
-                  <td style={{ padding: '12px', fontSize: '12px' }}>{c.status}</td>
-                  <td style={{ padding: '12px', fontSize: '12px' }}>
-                    {c.ports.length > 0 ? c.ports.join(', ') : '-'}
-                  </td>
-                  <td style={{ padding: '12px' }}>
+            <h1 style={{ fontSize: '28px', margin: '0 0 10px 0', color: '#333' }}>
+              {selectedTab === 'docker' ? '🐳 Docker Control' : (() => {
+                const activeTab = getEnabledTabs().find(t => t.key === selectedTab);
+                return activeTab ? `${activeTab.icon} ${activeTab.label}` : 'Dashboard';
+              })()}
+            </h1>
+            <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>
+              {selectedTab === 'docker' 
+                ? 'Manage your Docker containers, view logs, and control the stack'
+                : 'Access and manage your service'
+              }
+            </p>
+          </div>
+
+          {/* Content Body */}
+          <div style={{ flex: 1, overflow: 'auto', padding: '30px 40px' }}>
+            {selectedTab === 'docker' ? (
+              // Docker Control Content
+              <>
+                {/* Stack Controls */}
+                <div style={{ 
+                  marginBottom: '30px',
+                  padding: '20px',
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                }}>
+                  <h3 style={{ marginTop: 0, marginBottom: '15px', fontSize: '18px' }}>Stack Controls</h3>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     <button 
-                      onClick={() => viewLogs(c.service)}
+                      onClick={() => controlStack('start')}
+                      disabled={!!controlAction}
                       style={{
-                        padding: '4px 12px',
+                        padding: '10px 20px',
+                        cursor: controlAction ? 'not-allowed' : 'pointer',
+                        backgroundColor: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        opacity: controlAction ? 0.6 : 1,
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => !controlAction && (e.currentTarget.style.backgroundColor = '#218838')}
+                      onMouseLeave={(e) => !controlAction && (e.currentTarget.style.backgroundColor = '#28a745')}
+                    >
+                      ▶️ Start All
+                    </button>
+                    <button 
+                      onClick={() => controlStack('stop')}
+                      disabled={!!controlAction}
+                      style={{
+                        padding: '10px 20px',
+                        cursor: controlAction ? 'not-allowed' : 'pointer',
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        opacity: controlAction ? 0.6 : 1,
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => !controlAction && (e.currentTarget.style.backgroundColor = '#c82333')}
+                      onMouseLeave={(e) => !controlAction && (e.currentTarget.style.backgroundColor = '#dc3545')}
+                    >
+                      ⏸️ Stop All
+                    </button>
+                    <button 
+                      onClick={() => controlStack('restart')}
+                      disabled={!!controlAction}
+                      style={{
+                        padding: '10px 20px',
+                        cursor: controlAction ? 'not-allowed' : 'pointer',
+                        backgroundColor: '#ffc107',
+                        color: 'black',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        opacity: controlAction ? 0.6 : 1,
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => !controlAction && (e.currentTarget.style.backgroundColor = '#e0a800')}
+                      onMouseLeave={(e) => !controlAction && (e.currentTarget.style.backgroundColor = '#ffc107')}
+                    >
+                      🔄 Restart All
+                    </button>
+                    <button 
+                      onClick={() => controlStack('pull')}
+                      disabled={!!controlAction}
+                      style={{
+                        padding: '10px 20px',
+                        cursor: controlAction ? 'not-allowed' : 'pointer',
+                        backgroundColor: '#17a2b8',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        opacity: controlAction ? 0.6 : 1,
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => !controlAction && (e.currentTarget.style.backgroundColor = '#138496')}
+                      onMouseLeave={(e) => !controlAction && (e.currentTarget.style.backgroundColor = '#17a2b8')}
+                    >
+                      ⬇️ Pull Updates
+                    </button>
+                  </div>
+                  {controlAction && (
+                    <p style={{ marginTop: '15px', marginBottom: 0, color: '#666', fontSize: '14px' }}>
+                      ⏳ Executing: <strong>{controlAction}</strong>...
+                    </p>
+                  )}
+                </div>
+
+                {/* Containers Table */}
+                <div style={{ 
+                  marginBottom: '30px',
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ padding: '20px', borderBottom: '1px solid #dee2e6' }}>
+                    <h3 style={{ margin: 0, fontSize: '18px' }}>Containers</h3>
+                  </div>
+                  {stackStatus && stackStatus.containers.length > 0 ? (
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ 
+                        width: '100%', 
+                        borderCollapse: 'collapse'
+                      }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f8f9fa' }}>
+                            <th style={{ padding: '12px 20px', textAlign: 'left', borderBottom: '2px solid #dee2e6', fontWeight: '600', fontSize: '13px', color: '#666' }}>Service</th>
+                            <th style={{ padding: '12px 20px', textAlign: 'left', borderBottom: '2px solid #dee2e6', fontWeight: '600', fontSize: '13px', color: '#666' }}>Container</th>
+                            <th style={{ padding: '12px 20px', textAlign: 'left', borderBottom: '2px solid #dee2e6', fontWeight: '600', fontSize: '13px', color: '#666' }}>State</th>
+                            <th style={{ padding: '12px 20px', textAlign: 'left', borderBottom: '2px solid #dee2e6', fontWeight: '600', fontSize: '13px', color: '#666' }}>Status</th>
+                            <th style={{ padding: '12px 20px', textAlign: 'left', borderBottom: '2px solid #dee2e6', fontWeight: '600', fontSize: '13px', color: '#666' }}>Ports</th>
+                            <th style={{ padding: '12px 20px', textAlign: 'left', borderBottom: '2px solid #dee2e6', fontWeight: '600', fontSize: '13px', color: '#666' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stackStatus.containers.map((c, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #dee2e6' }}>
+                              <td style={{ padding: '12px 20px', fontSize: '14px' }}>{c.service}</td>
+                              <td style={{ padding: '12px 20px', fontSize: '12px', color: '#666' }}>{c.name}</td>
+                              <td style={{ 
+                                padding: '12px 20px',
+                                color: getStatusColor(c.state),
+                                fontWeight: 'bold',
+                                fontSize: '14px'
+                              }}>
+                                {c.state}
+                                {c.health && ` (${c.health})`}
+                              </td>
+                              <td style={{ padding: '12px 20px', fontSize: '12px', color: '#666' }}>{c.status}</td>
+                              <td style={{ padding: '12px 20px', fontSize: '12px', color: '#666' }}>
+                                {c.ports.length > 0 ? c.ports.join(', ') : '-'}
+                              </td>
+                              <td style={{ padding: '12px 20px' }}>
+                                <button 
+                                  onClick={() => viewLogs(c.service)}
+                                  style={{
+                                    padding: '6px 14px',
+                                    cursor: 'pointer',
+                                    backgroundColor: '#6c757d',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
+                                >
+                                  📋 View Logs
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '40px 20px', textAlign: 'center', color: '#666' }}>
+                      No containers running. Deploy your stack first.
+                    </div>
+                  )}
+                </div>
+
+                {/* Logs Viewer */}
+                <div style={{ 
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  overflow: 'hidden',
+                  marginBottom: '30px'
+                }}>
+                  <div style={{ 
+                    padding: '20px',
+                    borderBottom: '1px solid #dee2e6',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <h3 style={{ margin: 0, fontSize: '18px' }}>
+                      Container Logs {selectedService && selectedService !== 'all' && `- ${selectedService}`}
+                      {selectedService === 'all' && ' - All Services'}
+                    </h3>
+                    <button 
+                      onClick={viewAllLogs}
+                      style={{
+                        padding: '8px 16px',
                         cursor: 'pointer',
                         backgroundColor: '#6c757d',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '4px',
-                        fontSize: '12px'
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease'
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
                     >
-                      📋 Logs
+                      View All Logs
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p style={{ color: '#666' }}>No containers running. Deploy your stack first.</p>
-        )}
-      </div>
+                  </div>
+                  <div style={{ padding: '20px' }}>
+                    {loadingLogs ? (
+                      <p style={{ color: '#666', margin: 0 }}>Loading logs...</p>
+                    ) : logs ? (
+                      <pre style={{ 
+                        backgroundColor: '#1e1e1e',
+                        color: '#d4d4d4',
+                        padding: '20px',
+                        borderRadius: '6px',
+                        overflow: 'auto',
+                        maxHeight: '500px',
+                        fontSize: '12px',
+                        fontFamily: 'Consolas, Monaco, monospace',
+                        margin: 0,
+                        lineHeight: 1.5
+                      }}>
+                        {logs}
+                      </pre>
+                    ) : (
+                      <p style={{ color: '#666', margin: 0 }}>
+                        Select a container from the table above to view its logs, or click "View All Logs" to see combined output.
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-      {/* Logs Viewer */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3>Logs {selectedService && `- ${selectedService}`}</h3>
-          <button 
-            onClick={viewAllLogs}
-            style={{
-              padding: '6px 12px',
-              cursor: 'pointer',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          >
-            View All Logs
-          </button>
+                {/* Service Coordination */}
+                <div style={{ 
+                  padding: '20px',
+                  backgroundColor: 'white',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                }}>
+                  <h3 style={{ marginTop: 0, marginBottom: '10px', fontSize: '18px' }}>Service Coordination</h3>
+                  <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+                    Connect services by sharing API keys between Radarr, Sonarr, Prowlarr, and Overseerr.
+                  </p>
+                  <button 
+                    onClick={runCoordination} 
+                    disabled={coordStatus?.running}
+                    style={{
+                      padding: '10px 20px',
+                      cursor: coordStatus?.running ? 'not-allowed' : 'pointer',
+                      backgroundColor: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      opacity: coordStatus?.running ? 0.6 : 1,
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => !coordStatus?.running && (e.currentTarget.style.backgroundColor = '#0056b3')}
+                    onMouseLeave={(e) => !coordStatus?.running && (e.currentTarget.style.backgroundColor = '#007bff')}
+                  >
+                    {coordStatus?.running ? '⏳ Running Coordination...' : '🔗 Run Coordination'}
+                  </button>
+                  {coordStatus && !coordStatus.running && (
+                    <pre style={{ 
+                      marginTop: '15px',
+                      backgroundColor: '#f8f9fa',
+                      padding: '15px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      border: '1px solid #dee2e6',
+                      maxHeight: '300px',
+                      overflow: 'auto',
+                      marginBottom: 0
+                    }}>
+                      {JSON.stringify(coordStatus, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              </>
+            ) : (
+              // Service IFrame Content
+              (() => {
+                const activeTab = getEnabledTabs().find(t => t.key === selectedTab);
+                return activeTab ? (
+                  <div style={{ 
+                    height: '100%',
+                    minHeight: '600px',
+                    background: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    overflow: 'hidden'
+                  }}>
+                    <ServiceIframe
+                      serviceName={activeTab.key}
+                      label={activeTab.label}
+                      port={activeTab.port}
+                      basePath={activeTab.basePath}
+                      icon={activeTab.icon}
+                    />
+                  </div>
+                ) : (
+                  <div style={{ 
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: '#666',
+                    background: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                  }}>
+                    Select a service from the sidebar to get started
+                  </div>
+                );
+              })()
+            )}
+          </div>
         </div>
-        
-        {loadingLogs ? (
-          <p>Loading logs...</p>
-        ) : logs ? (
-          <pre style={{ 
-            backgroundColor: '#1e1e1e',
-            color: '#d4d4d4',
-            padding: '15px',
-            borderRadius: '4px',
-            overflow: 'auto',
-            maxHeight: '400px',
-            fontSize: '12px',
-            fontFamily: 'Consolas, Monaco, monospace'
-          }}>
-            {logs}
-          </pre>
-        ) : (
-          <p style={{ color: '#666' }}>Select a container to view logs</p>
-        )}
-      </div>
-
-      {/* Service Coordination */}
-      <div style={{ 
-        padding: '15px',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '8px'
-      }}>
-        <h3 style={{ marginTop: 0 }}>Service Coordination</h3>
-        <p style={{ fontSize: '14px', color: '#666' }}>
-          Connect services by sharing API keys between Radarr, Sonarr, Prowlarr, and Overseerr.
-        </p>
-        <button 
-          onClick={runCoordination} 
-          disabled={coordStatus?.running}
-          style={{
-            padding: '8px 16px',
-            cursor: coordStatus?.running ? 'not-allowed' : 'pointer',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            opacity: coordStatus?.running ? 0.6 : 1
-          }}
-        >
-          {coordStatus?.running ? '⏳ Running…' : '🔗 Run Coordination'}
-        </button>
-        {coordStatus && !coordStatus.running && (
-          <pre style={{ 
-            marginTop: '15px',
-            backgroundColor: 'white',
-            padding: '10px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            border: '1px solid #dee2e6',
-            maxHeight: '200px',
-            overflow: 'auto'
-          }}>
-            {JSON.stringify(coordStatus, null, 2)}
-          </pre>
-        )}
-      </div>
       </div>
     </div>
   );
