@@ -8,6 +8,8 @@ PlexArr unifies the disjointed multiple docker run setup that requires each API 
 
 - **Setup Wizard**: User-friendly interface that guides you through configuration
 - **Automatic API Coordination**: Services are automatically connected and configured
+- **AI-Powered Configuration**: Optional AI agent for intelligent setup recommendations (Gemini, OpenAI, Claude)
+- **Post-Deployment Wizard**: Automated service configuration via APIs after containers are running
 - **Unified Management**: Single interface for managing all your media services
 - **Network Configuration Help**: Guidance for router/firewall setup
 - **Low Configuration**: Predefined sensible defaults for quick setup
@@ -25,13 +27,20 @@ PlexArr manages and coordinates the following services:
 - **Lidarr** - Music collection manager
 - **Prowlarr** - Indexer manager for all *arr apps
 
+### Download Clients
+- **NZBGet (Media)** - Usenet downloads for movies & TV
+- **NZBGet (Music)** - Separate Usenet downloads for music (optional)
+- **qBittorrent** - BitTorrent download client (optional)
+- **MeTube** - YouTube and video downloader (optional)
+
 ### Supporting Services
 - **Overseerr** - Media request management
 - **Maintainerr** - Collection and category management for Plex
-- **NZBGet** - Usenet download client (2 instances supported)
 - **Nginx Proxy Manager** - Reverse proxy with SSL support (optional)
-- **WireGuard (wg-easy)** - VPN for secure remote access (optional)
-- **Lidify** - Lidarr automation tool (optional)
+- **WireGuard** - VPN for secure remote access (optional)
+
+### AI & Automation
+- **AI Agent** - Automated configuration assistance using Gemini, OpenAI, or Claude (optional)
 
 ## 🚀 Quick Start
 
@@ -143,7 +152,10 @@ For external access, you'll need to configure:
 | Lidarr | 8686 | http://localhost:8686 |
 | Overseerr | 5055 | http://localhost:5055 |
 | Maintainerr | 6246 | http://localhost:6246 |
-| NZBGet | 6789 | http://localhost:6789 |
+| NZBGet (Media) | 6789 | http://localhost:6789 |
+| NZBGet (Music) | 6790 | http://localhost:6790 |
+| qBittorrent | 8080 | http://localhost:8080 |
+| MeTube | 8081 | http://localhost:8081 |
 | Nginx Proxy Manager | 81 | http://localhost:81 |
 | WireGuard | 51821 | http://localhost:51821 |
 
@@ -157,6 +169,29 @@ After deployment, PlexArr automatically:
 4. **Sets up Maintainerr** - Connects to Plex for collection management
 
 All services communicate using Docker container names (e.g., `http://radarr:7878`), making the setup reliable and portable.
+
+## 🤖 AI Agent Assistant (Optional)
+
+PlexArr includes an optional AI agent that helps with configuration and optimization:
+
+### Features
+- **Configuration Analysis**: Get intelligent recommendations for your setup
+- **Indexer Suggestions**: Personalized indexer recommendations based on your region
+- **Quality Profiles**: Optimized quality settings for Radarr, Sonarr, and Lidarr
+- **Troubleshooting**: AI-powered diagnosis of connection issues
+
+### Supported Providers
+- **Google Gemini** (Recommended - Free tier available)
+- **OpenAI GPT-4** (Most comprehensive)
+- **Anthropic Claude** (Excellent at troubleshooting)
+
+### Setup
+1. Enable "AI Agent Assistant" in the setup wizard
+2. Select your preferred AI provider
+3. Enter your API key (get free key at https://makersuite.google.com/app/apikey for Gemini)
+4. Optionally specify a custom model
+
+See [AI_AGENT_GUIDE.md](AI_AGENT_GUIDE.md) for detailed documentation.
 
 ## 📁 Directory Structure
 

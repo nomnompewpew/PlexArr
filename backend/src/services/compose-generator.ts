@@ -124,6 +124,47 @@ export function generateCompose(config: PlexArrConfig): string {
     };
   }
 
+  if (config.services.nzbgetMusic?.enabled) {
+    services.nzbgetMusic = {
+      image: 'lscr.io/linuxserver/nzbget:latest',
+      container_name: 'nzbget-music',
+      environment: env,
+      ports: [`${config.services.nzbgetMusic.port}:6789`],
+      volumes: [
+        `${config.storage.config}/nzbget-music:/config`,
+        `${config.storage.downloads}/music:/downloads`,
+      ],
+      restart: 'unless-stopped',
+    };
+  }
+
+  if (config.services.qbittorrent?.enabled) {
+    services.qbittorrent = {
+      image: 'lscr.io/linuxserver/qbittorrent:latest',
+      container_name: 'qbittorrent',
+      environment: env,
+      ports: [`${config.services.qbittorrent.port}:8080`],
+      volumes: [
+        `${config.storage.config}/qbittorrent:/config`,
+        `${config.storage.downloads}:/downloads`,
+      ],
+      restart: 'unless-stopped',
+    };
+  }
+
+  if (config.services.metube?.enabled) {
+    services.metube = {
+      image: 'ghcr.io/alexta69/metube:latest',
+      container_name: 'metube',
+      environment: { TZ: config.system.timezone },
+      ports: [`${config.services.metube.port}:8081`],
+      volumes: [
+        `${config.storage.downloads}:/downloads`,
+      ],
+      restart: 'unless-stopped',
+    };
+  }
+
   if (config.services.nginxProxyManager?.enabled) {
     services.nginxProxyManager = {
       image: 'jc21/nginx-proxy-manager:latest',

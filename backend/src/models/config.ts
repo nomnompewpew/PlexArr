@@ -28,11 +28,19 @@ export interface NetworkConfig {
   publicDomain?: string;
 }
 
+export interface AIAgentConfig {
+  enabled: boolean;
+  provider: 'gemini' | 'openai' | 'anthropic';
+  apiKey?: string;
+  model?: string;
+}
+
 export interface PlexArrConfig {
   version: number;          // schema version for migrations
   system: SystemConfig;
   network: NetworkConfig;
   storage: StoragePaths;
+  aiAgent?: AIAgentConfig;  // optional AI agent for automated configuration
   services: {
     plex: ServiceConfig;
     radarr: ServiceConfig;
@@ -41,7 +49,10 @@ export interface PlexArrConfig {
     prowlarr: ServiceConfig;
     overseerr: ServiceConfig;
     maintainerr: ServiceConfig;
-    nzbget: ServiceConfig;
+    nzbget: ServiceConfig;       // NZBMedia (movies + TV)
+    nzbgetMusic?: ServiceConfig; // NZBMusic (music downloads)
+    qbittorrent?: ServiceConfig;
+    metube?: ServiceConfig;
     nginxProxyManager?: ServiceConfig;
     wireguard?: ServiceConfig;
   };
