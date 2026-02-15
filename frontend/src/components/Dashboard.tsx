@@ -4,6 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { CoordinationStatus, PlexArrConfig } from '../types/plexarr-config.types';
+import RequestBar, { RequestType } from './RequestBar';
+import RequestModal from './RequestModal';
+import ServiceIframe from './ServiceIframe';
 
 interface Container {
   name: string;
@@ -34,6 +37,7 @@ export const Dashboard: React.FC = () => {
   const [stackStatus, setStackStatus] = useState<StackStatus | null>(null);
   const [coordStatus, setCoordStatus] = useState<CoordinationStatus | null>(null);
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<string>('plex');
   const [logs, setLogs] = useState<string>('');
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [controlAction, setControlAction] = useState<string | null>(null);
@@ -42,6 +46,9 @@ export const Dashboard: React.FC = () => {
     return saved ? JSON.parse(saved) : false;
   });
   const [config, setConfig] = useState<PlexArrConfig | null>(null);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [requestType, setRequestType] = useState<RequestType>('movies');
+  const [requestQuery, setRequestQuery] = useState('');
 
   // Service port mapping
   const servicePortMap: Record<string, { port: number; basePath?: string }> = {
@@ -148,6 +155,41 @@ export const Dashboard: React.FC = () => {
     return links;
   };
 
+  const getEnabledTabs = (): Array<{ key: string; label: string; icon: string; port: number; basePath?: string }> => {
+    if (!config) return [];
+
+    const tabs: Array<{ key: string; label: string; icon: string; port: number; basePath?: string }> = [];
+    
+    const serviceConfigs: Array<[string, boolean | undefined, string, string, number, string?]> = [
+      ['plex', config.services.plex?.enabled, 'Plex', '📺', 32400, '/web'],
+      ['radarr', config.services.radarr?.enabled, 'Radarr', '🎬', 7878],
+      ['sonarr', config.services.sonarr?.enabled, 'Sonarr', '📺', 8989],
+      ['lidarr', config.services.lidarr?.enabled, 'Lidarr', '🎵', 8686],
+      ['prowlarr', config.services.prowlarr?.enabled, 'Prowlarr', '🔍', 9696],
+      ['overseerr', config.services.overseerr?.enabled, 'Overseerr', '🎁', 5055],
+      ['maintainerr', config.services.maintainerr?.enabled, 'Maintainerr', '🛠️', 6246],
+      ['nzbget', config.services.nzbget?.enabled, 'NZBGet', '📥', 6789],
+      ['nzbgetMusic', config.services.nzbgetMusic?.enabled, 'NZBGet (Music)', '🎵', 6790],
+      ['qbittorrent', config.services.qbittorrent?.enabled, 'qBittorrent', '⚡', 8080],
+      ['metube', config.services.metube?.enabled, 'MeTube', '📹', 8081],
+      ['nginxProxyManager', config.services.nginxProxyManager?.enabled, 'Nginx PM', '🔀', 81]
+    ];
+
+    serviceConfigs.forEach(([key, enabled, label, icon, port, basePath]) => {
+      if (enabled) {
+        tabs.push({ key, label, icon, port, basePath });
+      }
+    });
+
+    return tabs;
+  };
+
+  const handleRequestSubmit = (type: RequestType, query: string) => {
+    setRequestType(type);
+    setRequestQuery(query);
+    setRequestModalOpen(true);
+  };
+
   const refresh = async () => {
     try {
       const res = await api.get('/deploy-new/status');
@@ -235,6 +277,16 @@ export const Dashboard: React.FC = () => {
     return () => clearInterval(id); 
   }, []);
 
+  useEffect(() => {
+    // Set first enabled service as default tab
+    if (config) {
+      const tabs = getEnabledTabs();
+      if (tabs.length > 0) {
+        setSelectedTab(tabs[0].key);
+      }
+    }
+  }, [config]);
+
   const getStatusColor = (state: string): string => {
     switch (state.toLowerCase()) {
       case 'running':
@@ -251,151 +303,148 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
-      {/* Header with Navigation */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '20px',
-        paddingBottom: '15px',
-        borderBottom: '2px solid #dee2e6'
-      }}>
-        <div>
-          <button 
-            onClick={() => navigate('/wizard')}
-            style={{
-              padding: '8px 16px',
-              cursor: 'pointer',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              marginBottom: '12px',
-              fontSize: '14px'
-            }}
-          >
-            ← Back to Setup Wizard
-          </button>
-          <h2 style={{ margin: 0 }}>PlexArr Stack</h2>
-          {stackStatus && (
-            <p style={{ 
-              margin: '5px 0', 
-              fontSize: '14px',
-              color: getStatusColor(stackStatus.status)
-            }}>
-              Status: <strong>{stackStatus.status}</strong> 
-              {' '}({stackStatus.containers.length} container{stackStatus.containers.length !== 1 ? 's' : ''})
-            </p>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-          <button 
-            onClick={toggleAdvanced}
-            style={{
-              padding: '8px 16px',
-              cursor: 'pointer',
-              backgroundColor: showAdvanced ? '#007bff' : '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          >
-            ⚙️ {showAdvanced ? 'Hide' : 'Show'} Advanced
-          </button>
-          <button 
-            onClick={refresh}
-            style={{
-              padding: '8px 16px',
-              cursor: 'pointer',
-              backgroundColor: '#0066cc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px'
-            }}
-          >
-            🔄 Refresh
-          </button>
-        </div>
-      </div>
+    <div style={{ fontFamily: 'system-ui, sans-serif', display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {/* Request Bar - Always visible at top */}
+      <RequestBar onRequest={handleRequestSubmit} />
 
-      {/* Quick Links to Services */}
-      {getServiceLinks().length > 0 && (
+      {/* Request Modal */}
+      <RequestModal 
+        isOpen={requestModalOpen}
+        type={requestType}
+        query={requestQuery}
+        onClose={() => setRequestModalOpen(false)}
+      />
+
+      {/* Main Dashboard Content */}
+      <div style={{ padding: '20px', flex: 1, overflow: 'auto' }}>
+        {/* Header with Navigation */}
         <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
           marginBottom: '20px',
-          padding: '15px',
-          backgroundColor: '#f0f8ff',
-          borderLeft: '4px solid #0066cc',
-          borderRadius: '4px'
+          paddingBottom: '15px',
+          borderBottom: '2px solid #dee2e6'
         }}>
-          <h3 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links to Services</h3>
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-            gap: '12px'
-          }}>
-            {getServiceLinks().map((link) => (
-              <div 
-                key={link.name}
-                style={{
-                  padding: '12px',
-                  backgroundColor: 'white',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px'
-                }}
-              >
-                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                  {link.icon} {link.label}
-                </div>
-                <a 
-                  href={link.localUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: '#0066cc',
-                    textDecoration: 'none',
-                    fontSize: '12px',
-                    wordBreak: 'break-all'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.textDecoration = 'underline';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.textDecoration = 'none';
-                  }}
-                >
-                  localhost:{servicePortMap[link.name]?.port || '?'}
-                </a>
-                {link.publicUrl && (
-                  <a 
-                    href={link.publicUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      color: '#28a745',
-                      textDecoration: 'none',
-                      fontSize: '12px',
-                      wordBreak: 'break-all'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.textDecoration = 'underline';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.textDecoration = 'none';
-                    }}
-                  >
-                    📡 Public Domain
-                  </a>
-                )}
-              </div>
-            ))}
+          <div>
+            <button 
+              onClick={() => navigate('/wizard')}
+              style={{
+                padding: '8px 16px',
+                cursor: 'pointer',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                marginBottom: '12px',
+                fontSize: '14px'
+              }}
+            >
+              ← Back to Setup Wizard
+            </button>
+            <h2 style={{ margin: 0 }}>PlexArr Stack</h2>
+            {stackStatus && (
+              <p style={{ 
+                margin: '5px 0', 
+                fontSize: '14px',
+                color: getStatusColor(stackStatus.status)
+              }}>
+                Status: <strong>{stackStatus.status}</strong> 
+                {' '}({stackStatus.containers.length} container{stackStatus.containers.length !== 1 ? 's' : ''})
+              </p>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+            <button 
+              onClick={toggleAdvanced}
+              style={{
+                padding: '8px 16px',
+                cursor: 'pointer',
+                backgroundColor: showAdvanced ? '#007bff' : '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              ⚙️ {showAdvanced ? 'Hide' : 'Show'} Advanced
+            </button>
+            <button 
+              onClick={refresh}
+              style={{
+                padding: '8px 16px',
+                cursor: 'pointer',
+                backgroundColor: '#0066cc',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px'
+              }}
+            >
+              🔄 Refresh
+            </button>
           </div>
         </div>
-      )}
+
+        {/* Service Management Tabs */}
+        {getEnabledTabs().length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ 
+              display: 'flex',
+              gap: '8px',
+              borderBottom: '2px solid #dee2e6',
+              marginBottom: '16px',
+              overflowX: 'auto',
+              paddingBottom: '0'
+            }}>
+              {getEnabledTabs().map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setSelectedTab(tab.key)}
+                  style={{
+                    padding: '12px 16px',
+                    background: selectedTab === tab.key ? '#007bff' : 'transparent',
+                    color: selectedTab === tab.key ? 'white' : '#666',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: selectedTab === tab.key ? '600' : '500',
+                    borderBottom: selectedTab === tab.key ? '3px solid white' : 'none',
+                    transition: 'all 0.3s ease',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedTab !== tab.key) {
+                      e.currentTarget.style.background = '#f0f0f0';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedTab !== tab.key) {
+                      e.currentTarget.style.background = 'transparent';
+                    }
+                  }}
+                >
+                  {tab.icon} {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content - Service IFrame */}
+            {(() => {
+              const activeTab = getEnabledTabs().find(t => t.key === selectedTab);
+              return activeTab ? (
+                <div style={{ height: '75vh', marginBottom: '20px' }}>
+                  <ServiceIframe
+                    serviceName={activeTab.key}
+                    label={activeTab.label}
+                    port={activeTab.port}
+                    basePath={activeTab.basePath}
+                    icon={activeTab.icon}
+                  />
+                </div>
+              ) : null;
+            })()}
+          </div>
+        )}
 
       {/* Advanced Settings Section */}
       {showAdvanced && (
@@ -638,6 +687,7 @@ export const Dashboard: React.FC = () => {
             {JSON.stringify(coordStatus, null, 2)}
           </pre>
         )}
+      </div>
       </div>
     </div>
   );

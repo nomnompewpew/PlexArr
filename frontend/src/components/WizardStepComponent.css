@@ -361,10 +361,13 @@
 /* Wizard Actions */
 .wizard-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
   margin-top: 40px;
   padding-top: 30px;
   border-top: 2px solid #e5e7eb;
+  flex-wrap: wrap;
 }
 
 .btn {
