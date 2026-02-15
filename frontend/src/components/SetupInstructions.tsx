@@ -23,7 +23,6 @@ export const SetupInstructions: React.FC<SetupInstructionsProps> = ({
   specialNotes,
   onCredentialsRetrieved
 }) => {
-  const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState<any>(null);
   const [loadingCreds, setLoadingCreds] = useState(false);
   const [credError, setCredError] = useState<string | null>(null);

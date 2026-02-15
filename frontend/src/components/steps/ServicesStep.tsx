@@ -53,6 +53,7 @@ export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const testConnection = async (name: string) => {
     setTestResults(prev => ({ ...prev, [name]: { testing: true, success: false, message: 'Testing...' } }));
     try {
@@ -72,6 +73,7 @@ export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
       {Object.entries(SERVICE_INFO).map(([name, info]) => {
         const svc = services[name];
         if (!svc) return null;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const result = testResults[name];
         return (
           <div key={name} style={{ border: '1px solid #333', borderRadius: 8, padding: 16, marginBottom: 12 }}>

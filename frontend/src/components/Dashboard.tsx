@@ -23,15 +23,6 @@ interface StackStatus {
   containers: Container[];
 }
 
-interface ServiceLink {
-  name: string;
-  label: string;
-  localUrl: string;
-  publicUrl?: string;
-  icon: string;
-  enabled: boolean;
-}
-
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [stackStatus, setStackStatus] = useState<StackStatus | null>(null);
@@ -41,119 +32,13 @@ export const Dashboard: React.FC = () => {
   const [logs, setLogs] = useState<string>('');
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [controlAction, setControlAction] = useState<string | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState<boolean>(() => {
-    const saved = localStorage.getItem('dashboardAdvanced');
-    return saved ? JSON.parse(saved) : false;
-  });
+
   const [config, setConfig] = useState<PlexArrConfig | null>(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [requestType, setRequestType] = useState<RequestType>('movies');
   const [requestQuery, setRequestQuery] = useState('');
 
-  // Service port mapping
-  const servicePortMap: Record<string, { port: number; basePath?: string }> = {
-    plex: { port: 32400, basePath: '/web' },
-    radarr: { port: 7878 },
-    sonarr: { port: 8989 },
-    lidarr: { port: 8686 },
-    prowlarr: { port: 9696 },
-    overseerr: { port: 5055 },
-    maintainerr: { port: 6246 },
-    nzbget: { port: 6789 },
-    nzbgetMusic: { port: 6790 },
-    qbittorrent: { port: 8080 },
-    metube: { port: 8081 },
-    nginxProxyManager: { port: 81 }
-  };
 
-  // Friendly display names
-  const serviceLabels: Record<string, string> = {
-    plex: 'Plex Media Server',
-    radarr: 'Radarr (Movies)',
-    sonarr: 'Sonarr (TV)',
-    lidarr: 'Lidarr (Music)',
-    prowlarr: 'Prowlarr (Indexers)',
-    overseerr: 'Overseerr (Requests)',
-    maintainerr: 'Maintainerr',
-    nzbget: 'NZBGet (Media)',
-    nzbgetMusic: 'NZBGet (Music)',
-    qbittorrent: 'qBittorrent',
-    metube: 'MeTube (Downloads)',
-    nginxProxyManager: 'Nginx Proxy Manager',
-    wireguard: 'WireGuard (VPN)'
-  };
-
-  // Service icons/emojis
-  const serviceIcons: Record<string, string> = {
-    plex: '📺',
-    radarr: '🎬',
-    sonarr: '📺',
-    lidarr: '🎵',
-    prowlarr: '🔍',
-    overseerr: '🎁',
-    maintainerr: '🛠️',
-    nzbget: '📥',
-    nzbgetMusic: '🎵',
-    qbittorrent: '⚡',
-    metube: '📹',
-    nginxProxyManager: '🔀',
-    wireguard: '🔐'
-  };
-
-  const getServiceLinks = (): ServiceLink[] => {
-    if (!config) return [];
-    
-    const links: ServiceLink[] = [];
-    const publicDomain = config.network?.publicDomain;
-    
-    // Check each service
-    const services: Array<[string, boolean]> = [
-      ['plex', config.services.plex?.enabled || false],
-      ['radarr', config.services.radarr?.enabled || false],
-      ['sonarr', config.services.sonarr?.enabled || false],
-      ['lidarr', config.services.lidarr?.enabled || false],
-      ['prowlarr', config.services.prowlarr?.enabled || false],
-      ['overseerr', config.services.overseerr?.enabled || false],
-      ['maintainerr', config.services.maintainerr?.enabled || false],
-      ['nzbget', config.services.nzbget?.enabled || false],
-      ['nzbgetMusic', config.services.nzbgetMusic?.enabled || false],
-      ['qbittorrent', config.services.qbittorrent?.enabled || false],
-      ['metube', config.services.metube?.enabled || false],
-      ['nginxProxyManager', config.services.nginxProxyManager?.enabled || false]
-    ];
-
-    services.forEach(([serviceName, enabled]) => {
-      if (!enabled) return;
-      
-      const portInfo = servicePortMap[serviceName];
-      if (!portInfo) return;
-
-      const basePath = portInfo.basePath || '';
-      const localUrl = `http://localhost:${portInfo.port}${basePath}`;
-      
-      let publicUrl: string | undefined;
-      if (publicDomain) {
-        if (serviceName === 'nginxProxyManager') {
-          publicUrl = `https://${publicDomain}:81`;
-        } else if (serviceName === 'plex') {
-          publicUrl = `https://${publicDomain}${basePath}`;
-        } else {
-          publicUrl = `https://${publicDomain}`;
-        }
-      }
-
-      links.push({
-        name: serviceName,
-        label: serviceLabels[serviceName] || serviceName,
-        localUrl,
-        publicUrl,
-        icon: serviceIcons[serviceName] || '⚙️',
-        enabled: true
-      });
-    });
-
-    return links;
-  };
 
   const getEnabledTabs = (): Array<{ key: string; label: string; icon: string; port: number; basePath?: string }> => {
     if (!config) return [];
@@ -210,11 +95,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const toggleAdvanced = () => {
-    const newValue = !showAdvanced;
-    setShowAdvanced(newValue);
-    localStorage.setItem('dashboardAdvanced', JSON.stringify(newValue));
-  };
+
 
   const runCoordination = async () => {
     setCoordStatus({ running: true });
@@ -285,6 +166,7 @@ export const Dashboard: React.FC = () => {
         setSelectedTab(tabs[0].key);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
   const getStatusColor = (state: string): string => {
