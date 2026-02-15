@@ -20,6 +20,7 @@ export interface SystemConfig {
   timezone: string;
   puid: number;
   pgid: number;
+  projectFolder: string; // Host path where stack compose files are stored (e.g., /opt/plexarr)
 }
 
 export interface NetworkConfig {
@@ -56,4 +57,5 @@ export interface StepResult {
 export interface CoordinationStatus {
   running?: boolean;
   results?: StepResult[];
+  error?: string;
 }

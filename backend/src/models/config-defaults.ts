@@ -5,7 +5,7 @@ import { PlexArrConfig } from './config';
 export function createDefaultConfig(): PlexArrConfig {
   return {
     version: 1,
-    system: { timezone: 'America/New_York', puid: 1000, pgid: 1000 },
+    system: { timezone: 'America/New_York', puid: 1000, pgid: 1000, projectFolder: '/opt/plexarr' },
     network: {},
     storage: {
       mediaRoot: '/data/media',

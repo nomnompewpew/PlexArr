@@ -20,6 +20,7 @@ export interface SystemConfig {
   timezone: string;         // e.g. America/New_York
   puid: number;
   pgid: number;
+  projectFolder: string;    // Host path where stack compose files are stored (e.g., /opt/plexarr)
 }
 
 export interface NetworkConfig {

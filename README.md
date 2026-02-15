@@ -38,16 +38,49 @@ PlexArr manages and coordinates the following services:
 ### Prerequisites
 
 - Docker and Docker Compose installed
+- Node.js 16+ and npm 7+
 - At least 4GB RAM
 - Storage space for media files
 - Linux host (or WSL2 on Windows)
 
-### Installation
+### Installation (Automated)
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/nomnompewpew/PlexArr.git
-   cd PlexArr
+The easiest way to set up PlexArr is using the automated setup script:
+
+```bash
+git clone https://github.com/nomnompewpew/PlexArr.git
+cd PlexArr
+
+# Run the setup script (handles everything)
+chmod +x setup.sh
+./setup.sh
+```
+
+The script will:
+- ✅ Check all dependencies
+- ✅ Create necessary directories and networks
+- ✅ Build Docker containers (with Docker CLI included!)
+- ✅ Start services
+- ✅ Verify everything works
+
+**Time: ~10-15 minutes**
+
+Once complete, open **http://localhost:3000** to start the wizard!
+
+### Installation (Manual)
+
+For detailed manual setup instructions, see [SETUP.md](SETUP.md)
+
+```bash
+git clone https://github.com/nomnompewpew/PlexArr.git
+cd PlexArr
+
+# Manual steps...
+npm install
+docker network create plexarr_default
+docker compose build
+docker compose up -d
+```
    ```
 
 2. **Start PlexArr**

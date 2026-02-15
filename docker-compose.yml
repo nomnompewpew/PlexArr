@@ -14,11 +14,12 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/app/data
-      - ./generated-config:/app/generated-config
+      - /opt/plexarr:/opt/plexarr  # Mount host stacks directory (user-configurable)
     environment:
       - NODE_ENV=production
       - PORT=3001
       - DATABASE_PATH=/app/data/plexarr.db
+      - STACKS_DIR=/opt/plexarr  # Default stacks directory
     restart: unless-stopped
     networks:
       - plexarr_default

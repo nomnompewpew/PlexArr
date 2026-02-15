@@ -1,6 +1,7 @@
 // Storage paths configuration step
 
 import React, { useState } from 'react';
+import { api } from '../../services/api';
 
 interface StoragePaths {
   mediaRoot: string;
@@ -27,12 +28,8 @@ export const StorageStep: React.FC<Props> = ({ paths, onChange }) => {
 
   const checkPath = async (field: string, value: string) => {
     try {
-      const res = await fetch('/api/config-new/check-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: value }),
-      });
-      const result = await res.json();
+      const res = await api.post('/config-new/check-path', { path: value });
+      const result = res.data;
       setChecking(prev => ({ ...prev, [field]: result }));
     } catch (err) {
       console.error('Error checking path:', err);

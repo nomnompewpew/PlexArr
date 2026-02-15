@@ -1,6 +1,7 @@
 // Services configuration step with test connection
 
 import React, { useState } from 'react';
+import { api } from '../../services/api';
 
 interface ServiceConfig {
   enabled: boolean;
@@ -51,12 +52,8 @@ export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
   const testConnection = async (name: string) => {
     setTestResults(prev => ({ ...prev, [name]: { testing: true, success: false, message: 'Testing...' } }));
     try {
-      const res = await fetch('/api/services/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ service: name, port: services[name].port }),
-      });
-      const result = await res.json();
+      const res = await api.post('/services/test', { service: name, port: services[name].port });
+      const result = res.data;
       setTestResults(prev => ({ ...prev, [name]: result }));
     } catch (err) {
       setTestResults(prev => ({ ...prev, [name]: { testing: false, success: false, message: 'Request failed' } }));

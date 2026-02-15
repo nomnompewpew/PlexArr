@@ -3,7 +3,6 @@ import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import WizardPage from './pages/WizardPage';
 import DashboardPage from './pages/DashboardPage';
-import { api } from './services/api';
 
 function App() {
   const [setupCompleted, setSetupCompleted] = useState<boolean | null>(null);
@@ -14,15 +13,9 @@ function App() {
   }, []);
 
   const checkSetupStatus = async () => {
-    try {
-      const response = await api.get('/config');
-      setSetupCompleted(response.data.exists && response.data.config.setup_completed);
-    } catch (error) {
-      console.error('Error checking setup status:', error);
-      setSetupCompleted(false);
-    } finally {
-      setLoading(false);
-    }
+    const completed = localStorage.getItem('plexarr_setup_completed') === 'true';
+    setSetupCompleted(completed);
+    setLoading(false);
   };
 
   if (loading) {
