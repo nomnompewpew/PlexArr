@@ -28,11 +28,19 @@ export interface NetworkConfig {
   publicDomain?: string;
 }
 
+export interface AIAgentConfig {
+  enabled: boolean;
+  provider: 'gemini' | 'openai' | 'anthropic';
+  apiKey?: string;
+  model?: string;
+}
+
 export interface PlexArrConfig {
   version: number;
   system: SystemConfig;
   network: NetworkConfig;
   storage: StoragePaths;
+  aiAgent?: AIAgentConfig;
   services: {
     plex: ServiceConfig;
     radarr: ServiceConfig;
