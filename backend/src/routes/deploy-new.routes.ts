@@ -248,4 +248,55 @@ router.post('/coordinate', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/deploy-new/credentials/:serviceName - retrieve default credentials from Docker logs
+router.get('/credentials/:serviceName', async (req: Request, res: Response) => {
+  const serviceName = req.params.serviceName;
+  
+  try {
+    // Get Docker logs for the service container
+    const containerName = `plexarr-${serviceName}`;
+    
+    const { stdout } = await execAsync(`docker compose logs ${containerName} 2>&1`);
+    
+    let credentials: any = {};
+    
+    if (serviceName === 'nzbget' || serviceName === 'nzbgetMusic') {
+      // NZBGet default password format: "NZBGet server started successfully"
+      // Or look for "WARNING: using default login 'nzbget' with password 'tegbzn6789'"
+      const passwordMatch = stdout.match(/password['\s:]*['\"]?([a-zA-Z0-9]+)['\"]?/i);
+      const loginMatch = stdout.match(/login['\s:]*['\"]?([a-zA-Z0-9]+)['\"]?/i);
+      
+      credentials.username = loginMatch ? loginMatch[1] : 'nzbget';
+      // Common default password for NZBGet - if not found in logs, use documented default
+      if (passwordMatch) {
+        credentials.password = passwordMatch[1];
+      } else {
+        // NZBGet's documented default - varies by container, but often shown in logs
+        credentials.password = 'tegbzn6789';
+        credentials._note = 'This is the typical NZBGet default. Check logs if login fails.';
+      }
+    } else if (serviceName === 'qbittorrent') {
+      // qBittorrent default is admin:adminPassword
+      credentials.username = 'admin';
+      credentials.password = 'adminPassword';
+      credentials._warning = 'qBittorrent uses admin:adminPassword by default. Change immediately!';
+    }
+    
+    if (!credentials.username) {
+      return res.status(404).json({
+        success: false,
+        message: `Could not retrieve credentials for ${serviceName}. Check Docker logs manually: docker compose logs ${containerName}`
+      });
+    }
+    
+    res.json(credentials);
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: `Error retrieving credentials: ${err.message}`,
+      fallback: `Run: docker compose logs plexarr-${serviceName}`
+    });
+  }
+});
+
 export default router;

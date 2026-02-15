@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { api } from '../../services/api';
+import { ContextLabel } from '../ContextLabel';
 
 interface ServiceConfig {
   enabled: boolean;
@@ -67,6 +68,7 @@ export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
     <div>
       <h2>Services</h2>
       <p>Enable the services you want in your stack. Ports can be customized.</p>
+      <ContextLabel type="system-default" text="Ports below are defaults and work fine for most setups — only change if you have a port conflict on your system" />
       {Object.entries(SERVICE_INFO).map(([name, info]) => {
         const svc = services[name];
         if (!svc) return null;
@@ -78,6 +80,10 @@ export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
               <strong style={{ marginLeft: 8 }}>{info.label}</strong>
               <span style={{ marginLeft: 8, color: '#888' }}>{info.description}</span>
             </label>
+            <ContextLabel 
+              type="user-config" 
+              text={svc.enabled ? "Service is enabled — it will start when you deploy" : "Service is disabled — it won't start"} 
+            />
             {svc.enabled && (
               <div style={{ marginTop: 8, marginLeft: 24 }}>
                 <label>
@@ -89,15 +95,7 @@ export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {
                     style={{ width: 80 }}
                   />
                 </label>
-                <button onClick={() => testConnection(name)} style={{ marginLeft: 12 }}>
-                  Test Connection
-                </button>
-                {result && !result.testing && (
-                  <span style={{ marginLeft: 8, color: result.success ? 'green' : 'orange' }}>
-                    {result.success ? '✓ Connected' : `⚠ ${result.message}`}
-                  </span>
-                )}
-                {result?.testing && <span style={{ marginLeft: 8, color: '#888' }}>Testing…</span>}
+                <ContextLabel type="system-default" text="Default is recommended — only change if this port is already in use" />
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { api } from '../../services/api';
+import { ContextLabel } from '../ContextLabel';
 
 interface StoragePaths {
   mediaRoot: string;
@@ -42,7 +43,7 @@ export const StorageStep: React.FC<Props> = ({ paths, onChange }) => {
     if (value.startsWith('/')) checkPath(field, value);
   };
 
-  const renderField = (label: string, field: keyof StoragePaths, placeholder: string, required = true) => {
+  const renderField = (label: string, field: keyof StoragePaths, placeholder: string, required = true, contextType: 'user-config' | 'advanced' = 'user-config', contextText?: string) => {
     const status = checking[field];
     return (
       <div style={{ marginBottom: 16 }}>
@@ -61,6 +62,7 @@ export const StorageStep: React.FC<Props> = ({ paths, onChange }) => {
               : '⚠ Path does not exist — it will be created on deploy'}
           </small>
         )}
+        {contextText && <ContextLabel type={contextType} text={contextText} />}
       </div>
     );
   };
@@ -69,14 +71,22 @@ export const StorageStep: React.FC<Props> = ({ paths, onChange }) => {
     <div>
       <h2>Storage Paths</h2>
       <p>Define where media, downloads, and config data are stored on your host.</p>
-      {renderField('Media Root', 'mediaRoot', '/data/media')}
-      {renderField('Downloads', 'downloads', '/data/downloads')}
-      {renderField('Config Directory', 'config', '/opt/plexarr/config')}
-      <h3>Optional: Per-Library Overrides</h3>
-      <p>Leave blank to use: <code>{'{mediaRoot}'}/movies</code>, etc.</p>
-      {renderField('Movies', 'movies', `${paths.mediaRoot}/movies`, false)}
-      {renderField('TV Shows', 'tv', `${paths.mediaRoot}/tv`, false)}
-      {renderField('Music', 'music', `${paths.mediaRoot}/music`, false)}
+      
+      <div style={{ marginBottom: 24 }}>
+        <h3>Core Paths</h3>
+        {renderField('Media Root', 'mediaRoot', '/data/media', true, 'user-config', 'Your actual folder on the host where all your media is stored')}
+        {renderField('Downloads', 'downloads', '/data/downloads', true, 'user-config', 'The folder where services will save downloaded files you specify')}
+        {renderField('Config Directory', 'config', '/opt/plexarr/config', true, 'user-config', 'Where PlexArr stores service configuration files')}
+      </div>
+
+      <div>
+        <h3>Optional: Per-Library Overrides</h3>
+        <p>Leave blank to use: <code>{'{mediaRoot}'}/movies</code>, etc.</p>
+        <ContextLabel type="advanced" text="Only customize these if your movies, TV, and music are in completely different locations on your drive" />
+        {renderField('Movies', 'movies', `${paths.mediaRoot}/movies`, false, 'advanced', 'Separate path for movie files (optional)')}
+        {renderField('TV Shows', 'tv', `${paths.mediaRoot}/tv`, false, 'advanced', 'Separate path for TV show files (optional)')}
+        {renderField('Music', 'music', `${paths.mediaRoot}/music`, false, 'advanced', 'Separate path for music files (optional)')}
+      </div>
     </div>
   );
 };

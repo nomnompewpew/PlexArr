@@ -1,8 +1,9 @@
 // Dashboard component for stack health monitoring
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { CoordinationStatus } from '../types/plexarr-config.types';
+import { CoordinationStatus, PlexArrConfig } from '../types/plexarr-config.types';
 
 interface Container {
   name: string;
@@ -19,13 +20,133 @@ interface StackStatus {
   containers: Container[];
 }
 
+interface ServiceLink {
+  name: string;
+  label: string;
+  localUrl: string;
+  publicUrl?: string;
+  icon: string;
+  enabled: boolean;
+}
+
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [stackStatus, setStackStatus] = useState<StackStatus | null>(null);
   const [coordStatus, setCoordStatus] = useState<CoordinationStatus | null>(null);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [logs, setLogs] = useState<string>('');
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [controlAction, setControlAction] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(() => {
+    const saved = localStorage.getItem('dashboardAdvanced');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [config, setConfig] = useState<PlexArrConfig | null>(null);
+
+  // Service port mapping
+  const servicePortMap: Record<string, { port: number; basePath?: string }> = {
+    plex: { port: 32400, basePath: '/web' },
+    radarr: { port: 7878 },
+    sonarr: { port: 8989 },
+    lidarr: { port: 8686 },
+    prowlarr: { port: 9696 },
+    overseerr: { port: 5055 },
+    maintainerr: { port: 6246 },
+    nzbget: { port: 6789 },
+    nzbgetMusic: { port: 6790 },
+    qbittorrent: { port: 8080 },
+    metube: { port: 8081 },
+    nginxProxyManager: { port: 81 }
+  };
+
+  // Friendly display names
+  const serviceLabels: Record<string, string> = {
+    plex: 'Plex Media Server',
+    radarr: 'Radarr (Movies)',
+    sonarr: 'Sonarr (TV)',
+    lidarr: 'Lidarr (Music)',
+    prowlarr: 'Prowlarr (Indexers)',
+    overseerr: 'Overseerr (Requests)',
+    maintainerr: 'Maintainerr',
+    nzbget: 'NZBGet (Media)',
+    nzbgetMusic: 'NZBGet (Music)',
+    qbittorrent: 'qBittorrent',
+    metube: 'MeTube (Downloads)',
+    nginxProxyManager: 'Nginx Proxy Manager',
+    wireguard: 'WireGuard (VPN)'
+  };
+
+  // Service icons/emojis
+  const serviceIcons: Record<string, string> = {
+    plex: '📺',
+    radarr: '🎬',
+    sonarr: '📺',
+    lidarr: '🎵',
+    prowlarr: '🔍',
+    overseerr: '🎁',
+    maintainerr: '🛠️',
+    nzbget: '📥',
+    nzbgetMusic: '🎵',
+    qbittorrent: '⚡',
+    metube: '📹',
+    nginxProxyManager: '🔀',
+    wireguard: '🔐'
+  };
+
+  const getServiceLinks = (): ServiceLink[] => {
+    if (!config) return [];
+    
+    const links: ServiceLink[] = [];
+    const publicDomain = config.network?.publicDomain;
+    
+    // Check each service
+    const services: Array<[string, boolean]> = [
+      ['plex', config.services.plex?.enabled || false],
+      ['radarr', config.services.radarr?.enabled || false],
+      ['sonarr', config.services.sonarr?.enabled || false],
+      ['lidarr', config.services.lidarr?.enabled || false],
+      ['prowlarr', config.services.prowlarr?.enabled || false],
+      ['overseerr', config.services.overseerr?.enabled || false],
+      ['maintainerr', config.services.maintainerr?.enabled || false],
+      ['nzbget', config.services.nzbget?.enabled || false],
+      ['nzbgetMusic', config.services.nzbgetMusic?.enabled || false],
+      ['qbittorrent', config.services.qbittorrent?.enabled || false],
+      ['metube', config.services.metube?.enabled || false],
+      ['nginxProxyManager', config.services.nginxProxyManager?.enabled || false]
+    ];
+
+    services.forEach(([serviceName, enabled]) => {
+      if (!enabled) return;
+      
+      const portInfo = servicePortMap[serviceName];
+      if (!portInfo) return;
+
+      const basePath = portInfo.basePath || '';
+      const localUrl = `http://localhost:${portInfo.port}${basePath}`;
+      
+      let publicUrl: string | undefined;
+      if (publicDomain) {
+        if (serviceName === 'nginxProxyManager') {
+          publicUrl = `https://${publicDomain}:81`;
+        } else if (serviceName === 'plex') {
+          publicUrl = `https://${publicDomain}${basePath}`;
+        } else {
+          publicUrl = `https://${publicDomain}`;
+        }
+      }
+
+      links.push({
+        name: serviceName,
+        label: serviceLabels[serviceName] || serviceName,
+        localUrl,
+        publicUrl,
+        icon: serviceIcons[serviceName] || '⚙️',
+        enabled: true
+      });
+    });
+
+    return links;
+  };
 
   const refresh = async () => {
     try {
@@ -34,6 +155,23 @@ export const Dashboard: React.FC = () => {
     } catch (error) {
       console.error('Error fetching status:', error);
     }
+  };
+
+  const fetchConfig = async () => {
+    try {
+      // Try to fetch from /api/config-new first
+      const res = await api.get('/config-new');
+      setConfig(res.data);
+    } catch (error) {
+      // Config endpoint may not have data yet, that's ok
+      console.debug('Config not yet available:', error);
+    }
+  };
+
+  const toggleAdvanced = () => {
+    const newValue = !showAdvanced;
+    setShowAdvanced(newValue);
+    localStorage.setItem('dashboardAdvanced', JSON.stringify(newValue));
   };
 
   const runCoordination = async () => {
@@ -91,7 +229,8 @@ export const Dashboard: React.FC = () => {
   };
 
   useEffect(() => { 
-    refresh(); 
+    refresh();
+    fetchConfig();
     const id = setInterval(refresh, 10000); 
     return () => clearInterval(id); 
   }, []);
@@ -113,14 +252,31 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
-      {/* Stack Overview */}
+      {/* Header with Navigation */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        marginBottom: '20px' 
+        marginBottom: '20px',
+        paddingBottom: '15px',
+        borderBottom: '2px solid #dee2e6'
       }}>
         <div>
+          <button 
+            onClick={() => navigate('/wizard')}
+            style={{
+              padding: '8px 16px',
+              cursor: 'pointer',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              marginBottom: '12px',
+              fontSize: '14px'
+            }}
+          >
+            ← Back to Setup Wizard
+          </button>
           <h2 style={{ margin: 0 }}>PlexArr Stack</h2>
           {stackStatus && (
             <p style={{ 
@@ -133,22 +289,138 @@ export const Dashboard: React.FC = () => {
             </p>
           )}
         </div>
-        <button 
-          onClick={refresh}
-          style={{
-            padding: '8px 16px',
-            cursor: 'pointer',
-            backgroundColor: '#0066cc',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px'
-          }}
-        >
-          🔄 Refresh
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+          <button 
+            onClick={toggleAdvanced}
+            style={{
+              padding: '8px 16px',
+              cursor: 'pointer',
+              backgroundColor: showAdvanced ? '#007bff' : '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          >
+            ⚙️ {showAdvanced ? 'Hide' : 'Show'} Advanced
+          </button>
+          <button 
+            onClick={refresh}
+            style={{
+              padding: '8px 16px',
+              cursor: 'pointer',
+              backgroundColor: '#0066cc',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px'
+            }}
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
-      {/* Stack Controls */}
+      {/* Quick Links to Services */}
+      {getServiceLinks().length > 0 && (
+        <div style={{ 
+          marginBottom: '20px',
+          padding: '15px',
+          backgroundColor: '#f0f8ff',
+          borderLeft: '4px solid #0066cc',
+          borderRadius: '4px'
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links to Services</h3>
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: '12px'
+          }}>
+            {getServiceLinks().map((link) => (
+              <div 
+                key={link.name}
+                style={{
+                  padding: '12px',
+                  backgroundColor: 'white',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}
+              >
+                <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                  {link.icon} {link.label}
+                </div>
+                <a 
+                  href={link.localUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#0066cc',
+                    textDecoration: 'none',
+                    fontSize: '12px',
+                    wordBreak: 'break-all'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.textDecoration = 'underline';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.textDecoration = 'none';
+                  }}
+                >
+                  localhost:{servicePortMap[link.name]?.port || '?'}
+                </a>
+                {link.publicUrl && (
+                  <a 
+                    href={link.publicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#28a745',
+                      textDecoration: 'none',
+                      fontSize: '12px',
+                      wordBreak: 'break-all'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.textDecoration = 'underline';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.textDecoration = 'none';
+                    }}
+                  >
+                    📡 Public Domain
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Advanced Settings Section */}
+      {showAdvanced && (
+        <div style={{ 
+          marginBottom: '20px',
+          padding: '15px',
+          backgroundColor: '#fff3cd',
+          border: '1px solid #ffc107',
+          borderRadius: '4px'
+        }}>
+          <h3 style={{ marginTop: 0 }}>Advanced Settings</h3>
+          <p style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
+            {config?.system?.projectFolder && (
+              <>Project Folder: <code>{config.system.projectFolder}</code></>
+            )}
+          </p>
+          <p style={{ fontSize: '14px', color: '#666' }}>
+            {config?.network?.publicDomain && (
+              <>Public Domain: <code>{config.network.publicDomain}</code></>
+            )}
+          </p>
+        </div>
+      )}
+
+      
       <div style={{ 
         marginBottom: '20px',
         padding: '15px',

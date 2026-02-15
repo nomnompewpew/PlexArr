@@ -5,6 +5,7 @@ import { PlexArrConfig } from '../types/plexarr-config.types';
 import { StorageStep } from '../components/steps/StorageStep';
 import { ServicesStep } from '../components/steps/ServicesStep';
 import { ReviewStep } from '../components/steps/ReviewStep';
+import { ContextLabel } from '../components/ContextLabel';
 import './WizardPage.css';
 
 type StepId = 'welcome' | 'system' | 'storage' | 'services' | 'review';
@@ -95,8 +96,8 @@ const WizardPage: React.FC = () => {
     try {
       await api.put('/config-new', config);
       await api.post('/deploy-new/execute', config);
-      localStorage.setItem('plexarr_setup_completed', 'true');
-      navigate('/dashboard');
+      localStorage.setItem('plexarr_deployment_completed', 'true');
+      navigate('/post-deployment-setup');
     } catch (error: any) {
       console.error('Deployment error:', error);
       setDeployError(error?.response?.data?.message || error?.message || 'Failed to deploy.');
@@ -169,6 +170,7 @@ const WizardPage: React.FC = () => {
           />
         )}
         <small>Select your local timezone for proper scheduling</small>
+        <ContextLabel type="user-config" text="You choose this based on your location — it affects when scheduled tasks run" />
       </div>
 
       <div className="form-group">
@@ -181,6 +183,7 @@ const WizardPage: React.FC = () => {
           className="form-control"
         />
         <small>Run <code>id -u</code> in terminal to find yours.</small>
+        <ContextLabel type="system-default" text="System value unique to your user account — required for proper file permissions but don't guess" />
       </div>
 
       <div className="form-group">
@@ -193,6 +196,7 @@ const WizardPage: React.FC = () => {
           className="form-control"
         />
         <small>Run <code>id -g</code> in terminal to find yours.</small>
+        <ContextLabel type="system-default" text="System value unique to your group — required for file permissions but don't guess" />
       </div>
 
       <div className="form-group">
@@ -206,6 +210,7 @@ const WizardPage: React.FC = () => {
           placeholder="/opt/plexarr"
         />
         <small>Where to store your docker-compose.yml and stack data on the host. Default: <code>/opt/plexarr</code></small>
+        <ContextLabel type="user-config" text="You choose where on your drive PlexArr stores its configuration — use default unless you have a specific reason" />
       </div>
 
       <div className="form-group">
@@ -218,6 +223,7 @@ const WizardPage: React.FC = () => {
           className="form-control"
           placeholder="123.456.789.0"
         />
+        <ContextLabel type="optional" text="Only needed if you want to access services from outside your home network" />
       </div>
 
       <div className="form-group">
@@ -230,6 +236,7 @@ const WizardPage: React.FC = () => {
           className="form-control"
           placeholder="myserver.example.com"
         />
+        <ContextLabel type="optional" text="Only needed if you have a domain name (e.g., from DynDNS) for remote access" />
       </div>
     </div>
   );
