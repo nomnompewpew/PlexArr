@@ -41,7 +41,10 @@ export interface PlexArrConfig {
     prowlarr: ServiceConfig;
     overseerr: ServiceConfig;
     maintainerr: ServiceConfig;
-    nzbget: ServiceConfig;
+    nzbget: ServiceConfig;       // NZBMedia (movies + TV)
+    nzbgetMusic?: ServiceConfig; // NZBMusic (music downloads)
+    qbittorrent?: ServiceConfig;
+    metube?: ServiceConfig;
     nginxProxyManager?: ServiceConfig;
     wireguard?: ServiceConfig;
   };

@@ -21,14 +21,17 @@ interface Props {
 }
 
 const SERVICE_INFO: Record<string, { label: string; defaultPort: number; description: string }> = {
-  plex:        { label: 'Plex',        defaultPort: 32400, description: 'Media streaming server' },
-  radarr:      { label: 'Radarr',      defaultPort: 7878,  description: 'Movie management' },
-  sonarr:      { label: 'Sonarr',      defaultPort: 8989,  description: 'TV show management' },
-  lidarr:      { label: 'Lidarr',      defaultPort: 8686,  description: 'Music management' },
-  prowlarr:    { label: 'Prowlarr',    defaultPort: 9696,  description: 'Indexer management' },
-  overseerr:   { label: 'Overseerr',   defaultPort: 5055,  description: 'Media requests' },
-  maintainerr: { label: 'Maintainerr', defaultPort: 6246,  description: 'Collection management' },
-  nzbget:      { label: 'NZBGet',      defaultPort: 6789,  description: 'Usenet downloads' },
+  plex:        { label: 'Plex',           defaultPort: 32400, description: 'Media streaming server' },
+  radarr:      { label: 'Radarr',         defaultPort: 7878,  description: 'Movie management' },
+  sonarr:      { label: 'Sonarr',         defaultPort: 8989,  description: 'TV show management' },
+  lidarr:      { label: 'Lidarr',         defaultPort: 8686,  description: 'Music management' },
+  prowlarr:    { label: 'Prowlarr',       defaultPort: 9696,  description: 'Indexer management' },
+  overseerr:   { label: 'Overseerr',      defaultPort: 5055,  description: 'Media requests' },
+  maintainerr: { label: 'Maintainerr',    defaultPort: 6246,  description: 'Collection management' },
+  nzbget:      { label: 'NZBGet (Media)', defaultPort: 6789,  description: 'Usenet downloads for movies & TV' },
+  nzbgetMusic: { label: 'NZBGet (Music)', defaultPort: 6790,  description: 'Usenet downloads for music' },
+  qbittorrent: { label: 'qBittorrent',    defaultPort: 8080,  description: 'BitTorrent downloads' },
+  metube:      { label: 'MeTube',         defaultPort: 8081,  description: 'YouTube & video downloads' },
 };
 
 export const ServicesStep: React.FC<Props> = ({ services, onChange }) => {

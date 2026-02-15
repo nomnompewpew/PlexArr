@@ -21,6 +21,9 @@ export function createDefaultConfig(): PlexArrConfig {
       overseerr:   { enabled: true,  port: 5055  },
       maintainerr: { enabled: true,  port: 6246  },
       nzbget:      { enabled: true,  port: 6789  },
+      nzbgetMusic: { enabled: false, port: 6790  },
+      qbittorrent: { enabled: false, port: 8080  },
+      metube:      { enabled: false, port: 8081  },
     },
   };
 }
