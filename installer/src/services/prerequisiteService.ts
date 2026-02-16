@@ -31,13 +31,9 @@ export class PrerequisiteService {
    */
   private async checkDiskSpace(): Promise<PrerequisiteCheck> {
     try {
-      const homePath = await invoke<string>('execute_command', {
-        command: process.platform === 'win32' ? 'echo' : 'echo',
-        args: process.platform === 'win32' ? ['%USERPROFILE%'] : ['$HOME']
-      });
-
+      // Get home directory directly from Rust backend
       const diskSpace = await invoke<DiskSpace>('check_disk_space', {
-        path: homePath.trim()
+        path: ''  // Empty path will use home directory in Rust backend
       });
 
       const requiredGB = 50; // 50GB minimum
@@ -299,7 +295,7 @@ export class PrerequisiteService {
   /**
    * Check Linux-specific prerequisites
    */
-  private async checkLinuxPrerequisites(systemInfo: SystemInfo): Promise<PrerequisiteCheck[]> {
+  private async checkLinuxPrerequisites(_systemInfo: SystemInfo): Promise<PrerequisiteCheck[]> {
     const checks: PrerequisiteCheck[] = [];
 
     // Check Docker

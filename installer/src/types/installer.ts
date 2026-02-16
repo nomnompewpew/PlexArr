@@ -1,20 +1,19 @@
 /**
  * Installation state machine states
  */
-export enum InstallationState {
-  INITIAL = 'initial',
-  CHECKING_PREREQUISITES = 'checking_prerequisites',
-  DOWNLOADING_DEPENDENCIES = 'downloading_dependencies',
-  INSTALLING_WSL2 = 'installing_wsl2',
-  REBOOTING_FOR_WSL2 = 'rebooting_for_wsl2',
-  INSTALLING_DOCKER = 'installing_docker',
-  CONFIGURING_DOCKER = 'configuring_docker',
-  ADDING_TO_DOCKER_GROUP = 'adding_to_docker_group',
-  RELOGIN_REQUIRED = 'relogin_required',
-  INSTALLING_PLEXARR = 'installing_plexarr',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-}
+export type InstallationState = 
+  | 'initial'
+  | 'checking_prerequisites'
+  | 'downloading_dependencies'
+  | 'installing_wsl2'
+  | 'rebooting_for_wsl2'
+  | 'installing_docker'
+  | 'configuring_docker'
+  | 'adding_to_docker_group'
+  | 'relogin_required'
+  | 'installing_plexarr'
+  | 'completed'
+  | 'failed';
 
 /**
  * Platform types

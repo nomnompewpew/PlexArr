@@ -11,7 +11,7 @@ interface PrerequisiteScreenProps {
 
 export default function PrerequisiteScreen({ 
   state, 
-  onUpdateState,
+  onUpdateState: _onUpdateState,
   onMoveToNextState 
 }: PrerequisiteScreenProps) {
   const [showManualInstructions, setShowManualInstructions] = useState(false);

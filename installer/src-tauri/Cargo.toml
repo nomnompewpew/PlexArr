@@ -13,12 +13,13 @@ edition = "2021"
 tauri-build = { version = "1.5.0", features = [] }
 
 [dependencies]
-tauri = { version = "1.5.4", features = ["dialog-all", "fs-all", "http-all", "os-all", "path-all", "shell-all", "window-all"] }
+tauri = { version = "1.5.4", features = [ "window-request-user-attention", "http-request", "window-maximize", "shell-execute", "window-set-title", "fs-read-file", "window-unmaximize", "fs-create-dir", "window-set-resizable", "fs-exists", "fs-read-dir", "window-center", "shell-open", "fs-write-file", "shell-sidecar", "dialog-all", "os-all", "path-all"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
 hostname = "0.3"
 libc = "0.2"
+dirs = "5.0"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

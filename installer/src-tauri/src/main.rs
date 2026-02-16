@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use tauri::Manager;
+use dirs;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct SystemInfo {
@@ -25,12 +25,19 @@ fn get_system_info() -> Result<SystemInfo, String> {
     let platform = std::env::consts::OS.to_string();
     let arch = std::env::consts::ARCH.to_string();
     
-    let os_version = if cfg!(target_os = "windows") {
-        get_windows_version()
-    } else if cfg!(target_os = "macos") {
-        get_macos_version()
-    } else {
-        get_linux_version()
+    let os_version = {
+        #[cfg(target_os = "windows")]
+        {
+            get_windows_version()
+        }
+        #[cfg(target_os = "macos")]
+        {
+            get_macos_version()
+        }
+        #[cfg(target_os = "linux")]
+        {
+            get_linux_version()
+        }
     };
     
     let hostname = hostname::get()
@@ -48,17 +55,27 @@ fn get_system_info() -> Result<SystemInfo, String> {
 // Check available disk space
 #[tauri::command]
 fn check_disk_space(path: String) -> Result<DiskSpace, String> {
+    let check_path = if path.is_empty() {
+        // Use home directory if no path provided
+        dirs::home_dir()
+            .ok_or("Unable to determine home directory")?
+            .to_string_lossy()
+            .to_string()
+    } else {
+        path
+    };
+
     #[cfg(target_os = "windows")]
     {
-        check_disk_space_windows(&path)
+        check_disk_space_windows(&check_path)
     }
     #[cfg(target_os = "macos")]
     {
-        check_disk_space_unix(&path)
+        check_disk_space_unix(&check_path)
     }
     #[cfg(target_os = "linux")]
     {
-        check_disk_space_unix(&path)
+        check_disk_space_unix(&check_path)
     }
 }
 

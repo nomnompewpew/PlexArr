@@ -108,7 +108,7 @@ function App() {
         );
       
       case 'completed':
-        return <CompletedScreen state={state} />;
+        return <CompletedScreen state={state} onMoveToNextState={moveToNextState} />;
       
       case 'failed':
         return (

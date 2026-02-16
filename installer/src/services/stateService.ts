@@ -1,43 +1,30 @@
 import { invoke } from '@tauri-apps/api/tauri';
-import { appDataDir, join } from '@tauri-apps/api/path';
-import { readTextFile, writeTextFile, createDir, exists } from '@tauri-apps/api/fs';
-import type { InstallationStateData, InstallationState, SystemInfo } from '../types/installer';
+import { readTextFile, writeTextFile, exists } from '@tauri-apps/api/fs';
+import type { InstallationStateData, InstallationState, SystemInfo, LinuxDistro } from '../types/installer';
 
 const STATE_FILE_NAME = 'installation-state.json';
 const STATE_VERSION = 1;
+// Use /tmp for state file - it's a temporary file anyway and avoids Tauri permission issues
+const STATE_FILE_PATH = `/tmp/plexarr-${STATE_FILE_NAME}`;
 
 /**
  * Service for managing installation state persistence
  */
 export class StateService {
-  private stateFilePath: string | null = null;
-
   /**
    * Initialize the state service
    */
   async initialize(): Promise<void> {
-    const appData = await appDataDir();
-    const plexarrDir = await join(appData, 'plexarr-installer');
-    
-    // Ensure directory exists
-    if (!(await exists(plexarrDir))) {
-      await createDir(plexarrDir, { recursive: true });
-    }
-    
-    this.stateFilePath = await join(plexarrDir, STATE_FILE_NAME);
+    // No initialization needed for /tmp path
   }
 
   /**
    * Load state from disk, or create initial state
    */
   async loadState(): Promise<InstallationStateData> {
-    if (!this.stateFilePath) {
-      await this.initialize();
-    }
-
     try {
-      if (await exists(this.stateFilePath!)) {
-        const content = await readTextFile(this.stateFilePath!);
+      if (await exists(STATE_FILE_PATH)) {
+        const content = await readTextFile(STATE_FILE_PATH);
         const state = JSON.parse(content) as InstallationStateData;
         
         // Migrate state if version mismatch
@@ -55,15 +42,12 @@ export class StateService {
    * Save state to disk
    */
   async saveState(state: InstallationStateData): Promise<void> {
-    if (!this.stateFilePath) {
-      await this.initialize();
-    }
 
     state.lastUpdated = Date.now();
     state.version = STATE_VERSION;
 
     try {
-      await writeTextFile(this.stateFilePath!, JSON.stringify(state, null, 2));
+      await writeTextFile(STATE_FILE_PATH, JSON.stringify(state, null, 2));
     } catch (error) {
       console.error('Failed to save state:', error);
       throw new Error(`Failed to save installation state: ${error}`);
@@ -127,7 +111,10 @@ export class StateService {
       if (systemInfo.platform === 'linux') {
         try {
           const distroInfo = await this.detectLinuxDistro();
-          systemInfo.distro = distroInfo.distro;
+          const validDistros: LinuxDistro[] = ['ubuntu', 'debian', 'fedora', 'arch', 'centos', 'rhel', 'unknown'];
+          systemInfo.distro = (validDistros.includes(distroInfo.distro as LinuxDistro) 
+            ? distroInfo.distro 
+            : 'unknown') as LinuxDistro;
           systemInfo.distroVersion = distroInfo.version;
         } catch (error) {
           console.warn('Failed to detect Linux distribution:', error);
@@ -178,10 +165,7 @@ export class StateService {
    * Get state file path
    */
   async getStateFilePath(): Promise<string> {
-    if (!this.stateFilePath) {
-      await this.initialize();
-    }
-    return this.stateFilePath!;
+    return STATE_FILE_PATH;
   }
 }
 
