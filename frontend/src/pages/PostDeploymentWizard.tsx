@@ -253,6 +253,10 @@ const PostDeploymentWizard: React.FC = () => {
     return <div className="setup-loading">Loading setup wizard...</div>;
   }
 
+  if (steps.length === 0) {
+    return <div className="setup-loading">No services configured. Please run the wizard first.</div>;
+  }
+
   const currentStep = steps[currentStepIndex];
   const progress = ((completedSteps.size + 1) / steps.length) * 100;
 
