@@ -6,6 +6,7 @@ import { api } from '../services/api';
 import { PlexArrConfig } from '../types/plexarr-config.types';
 import { SetupInstructions } from '../components/SetupInstructions';
 import { generateSetupInstructions } from '../services/setupInstructions';
+import { ThreePaneLayout } from '../components/ThreePaneLayout';
 import '../styles/PostDeploymentWizard.css';
 
 interface SetupStep {
@@ -252,243 +253,253 @@ const PostDeploymentWizard: React.FC = () => {
     return <div className="setup-loading">Loading setup wizard...</div>;
   }
 
+  if (steps.length === 0) {
+    return <div className="setup-loading">No services configured. Please run the wizard first.</div>;
+  }
+
   const currentStep = steps[currentStepIndex];
   const progress = ((completedSteps.size + 1) / steps.length) * 100;
 
-  return (
-    <div className="post-deployment-wizard">
-      {/* Sidebar Progress */}
-      <aside className="setup-sidebar">
-        <h2>Setup Progress</h2>
-        <div className="steps-list">
-          {steps.map((step, idx) => (
-            <div
-              key={step.id}
-              className={`step-item ${idx === currentStepIndex ? 'active' : ''} ${
-                completedSteps.has(step.id) ? 'completed' : ''
-              }`}
-              onClick={() => setCurrentStepIndex(idx)}
-            >
-              <div className="step-indicator">
-                {completedSteps.has(step.id) ? (
-                  <span className="check">✓</span>
-                ) : (
-                  <span className="number">{idx + 1}</span>
-                )}
-              </div>
-              <div className="step-info">
-                <div className="step-label">{step.icon} {step.label}</div>
-                <div className="step-desc">{step.description}</div>
-              </div>
+  // Sidebar content
+  const renderSidebar = () => (
+    <>
+      <h2 style={{ fontSize: '18px', margin: '0 0 20px 0', color: '#333' }}>Setup Progress</h2>
+      <div className="steps-list">
+        {steps.map((step, idx) => (
+          <div
+            key={step.id}
+            className={`step-item ${idx === currentStepIndex ? 'active' : ''} ${
+              completedSteps.has(step.id) ? 'completed' : ''
+            }`}
+            onClick={() => setCurrentStepIndex(idx)}
+          >
+            <div className="step-indicator">
+              {completedSteps.has(step.id) ? (
+                <span className="check">✓</span>
+              ) : (
+                <span className="number">{idx + 1}</span>
+              )}
             </div>
-          ))}
-        </div>
-
-        {/* Progress Bar */}
-        <div className="progress-section">
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${progress}%` }}
-            ></div>
+            <div className="step-info">
+              <div className="step-label">{step.icon} {step.label}</div>
+              <div className="step-desc">{step.description}</div>
+            </div>
           </div>
-          <p className="progress-text">
-            {completedSteps.size} of {steps.length} complete
-          </p>
-        </div>
-      </aside>
+        ))}
+      </div>
 
-      {/* Main Content */}
-      <main className="setup-main">
-        <div className="setup-header">
-          <h1>{currentStep.icon} {currentStep.label}</h1>
-          <p className="setup-description">{currentStep.description}</p>
+      {/* Progress Bar */}
+      <div className="progress-section">
+        <div className="progress-bar">
+          <div
+            className="progress-fill"
+            style={{ width: `${progress}%` }}
+          ></div>
         </div>
+        <p className="progress-text">
+          {completedSteps.size} of {steps.length} complete
+        </p>
+      </div>
+    </>
+  );
 
-        <div className="setup-content">
-          {/* Setup Instructions - Context-aware guidance */}
-          {config && (
-            <SetupInstructions
-              {...generateSetupInstructions(currentStep.service, config, Array.from(completedSteps))}
+  // Footer with navigation
+  const renderFooter = () => (
+    <>
+      <button
+        className="btn-secondary"
+        onClick={handlePrevious}
+        disabled={currentStepIndex === 0}
+      >
+        ← Previous
+      </button>
+      <div className="nav-middle">
+        <span className="step-counter">
+          Step {currentStepIndex + 1} of {steps.length}
+        </span>
+        {currentStepIndex < steps.length - 1 && (
+          <button
+            className="btn-link"
+            onClick={handleSkip}
+          >
+            Skip to Dashboard
+          </button>
+        )}
+      </div>
+      <button
+        className="btn-primary"
+        onClick={() => {
+          markStepComplete(currentStep.id);
+          handleNext();
+        }}
+        disabled={currentStepIndex === steps.length - 1 && currentStep.service !== 'validate'}
+      >
+        {currentStepIndex === steps.length - 1 ? 'Complete' : 'Next →'}
+      </button>
+    </>
+  );
+
+  return (
+    <ThreePaneLayout
+      sidebar={renderSidebar()}
+      footer={renderFooter()}
+    >
+      {/* Page Header */}
+      <div className="setup-header">
+        <h1>{currentStep.icon} {currentStep.label}</h1>
+        <p className="setup-description">{currentStep.description}</p>
+      </div>
+
+      {/* Setup Content */}
+      <div className="setup-content">
+        {/* Setup Instructions - Context-aware guidance */}
+        {config && (
+          <SetupInstructions
+            {...generateSetupInstructions(currentStep.service, config, Array.from(completedSteps))}
+          />
+        )}
+
+        {/* Service Configuration UI or Instructions */}
+        <div className="service-frame">
+          {currentStep.service === 'plex' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}/web`}
+              title="Plex Setup"
+              className="service-iframe"
             />
           )}
-
-          {/* Service Configuration UI or Instructions */}
-          <div className="service-frame">
-            {currentStep.service === 'plex' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}/web`}
-                title="Plex Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'radarr' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="Radarr Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'sonarr' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="Sonarr Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'lidarr' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="Lidarr Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'prowlarr' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="Prowlarr Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'overseerr' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="Overseerr Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'maintainerr' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="Maintainerr Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'nzbget' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="NZBGet Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'nzbgetMusic' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="NZBGet Music Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'qbittorrent' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="qBittorrent Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'metube' && (
-              <iframe
-                src={`http://localhost:${currentStep.port}`}
-                title="MeTube Setup"
-                className="service-iframe"
-              />
-            )}
-            {currentStep.service === 'coordination' && (
-              <div className="setup-instructions">
-                <h2>Connect Services Together</h2>
-                <p>
-                  This step will automatically connect your Arr services (Radarr, Sonarr, Prowlarr)
-                  to Overseerr and set up download client connections.
-                </p>
-                <div className="instructions-box">
-                  <h3>What happens:</h3>
-                  <ul>
-                    <li>API keys are exchanged between services</li>
-                    <li>Prowlarr indexes are added to Radarr and Sonarr</li>
-                    <li>Download clients are added to each Arr service</li>
-                    <li>Overseerr is linked to Radarr and Sonarr</li>
-                  </ul>
-                </div>
-                <button
-                  className="btn-primary"
-                  onClick={() => markStepComplete('coordination')}
-                >
-                  ✓ Coordination Complete
-                </button>
+          {currentStep.service === 'radarr' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="Radarr Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'sonarr' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="Sonarr Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'lidarr' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="Lidarr Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'prowlarr' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="Prowlarr Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'overseerr' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="Overseerr Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'maintainerr' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="Maintainerr Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'nzbget' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="NZBGet Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'nzbgetMusic' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="NZBGet Music Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'qbittorrent' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="qBittorrent Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'metube' && (
+            <iframe
+              src={`http://localhost:${currentStep.port}`}
+              title="MeTube Setup"
+              className="service-iframe"
+            />
+          )}
+          {currentStep.service === 'coordination' && (
+            <div className="setup-instructions">
+              <h2>Connect Services Together</h2>
+              <p>
+                This step will automatically connect your Arr services (Radarr, Sonarr, Prowlarr)
+                to Overseerr and set up download client connections.
+              </p>
+              <div className="instructions-box">
+                <h3>What happens:</h3>
+                <ul>
+                  <li>API keys are exchanged between services</li>
+                  <li>Prowlarr indexes are added to Radarr and Sonarr</li>
+                  <li>Download clients are added to each Arr service</li>
+                  <li>Overseerr is linked to Radarr and Sonarr</li>
+                </ul>
               </div>
-            )}
-            {currentStep.service === 'validate' && (
-              <div className="setup-instructions">
-                <h2>Validate Your Setup</h2>
-                <p>All services should now be connected and working together.</p>
-                <div className="validation-status">
-                  <div className="status-item">
-                    <span className="status-icon">🟢</span>
-                    <span>Plex is accessible</span>
-                  </div>
-                  <div className="status-item">
-                    <span className="status-icon">🟢</span>
-                    <span>Radarr is configured</span>
-                  </div>
-                  <div className="status-item">
-                    <span className="status-icon">🟢</span>
-                    <span>Sonarr is configured</span>
-                  </div>
-                  <div className="status-item">
-                    <span className="status-icon">🟢</span>
-                    <span>Prowlarr has indexers</span>
-                  </div>
-                  <div className="status-item">
-                    <span className="status-icon">🟢</span>
-                    <span>Download clients connected</span>
-                  </div>
-                  <div className="status-item">
-                    <span className="status-icon">🟢</span>
-                    <span>Services coordinated</span>
-                  </div>
-                </div>
-                <button className="btn-primary" onClick={handleComplete}>
-                  ✓ Setup Complete - Go to Dashboard
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="setup-nav">
-          <button
-            className="btn-secondary"
-            onClick={handlePrevious}
-            disabled={currentStepIndex === 0}
-          >
-            ← Previous
-          </button>
-          <div className="nav-middle">
-            <span className="step-counter">
-              Step {currentStepIndex + 1} of {steps.length}
-            </span>
-            {currentStepIndex < steps.length - 1 && (
               <button
-                className="btn-link"
-                onClick={handleSkip}
+                className="btn-primary"
+                onClick={() => markStepComplete('coordination')}
               >
-                Skip to Dashboard
+                ✓ Coordination Complete
               </button>
-            )}
-          </div>
-          <button
-            className="btn-primary"
-            onClick={() => {
-              markStepComplete(currentStep.id);
-              handleNext();
-            }}
-            disabled={currentStepIndex === steps.length - 1 && currentStep.service !== 'validate'}
-          >
-            {currentStepIndex === steps.length - 1 ? 'Complete' : 'Next →'}
-          </button>
+            </div>
+          )}
+          {currentStep.service === 'validate' && (
+            <div className="setup-instructions">
+              <h2>Validate Your Setup</h2>
+              <p>All services should now be connected and working together.</p>
+              <div className="validation-status">
+                <div className="status-item">
+                  <span className="status-icon">🟢</span>
+                  <span>Plex is accessible</span>
+                </div>
+                <div className="status-item">
+                  <span className="status-icon">🟢</span>
+                  <span>Radarr is configured</span>
+                </div>
+                <div className="status-item">
+                  <span className="status-icon">🟢</span>
+                  <span>Sonarr is configured</span>
+                </div>
+                <div className="status-item">
+                  <span className="status-icon">🟢</span>
+                  <span>Prowlarr has indexers</span>
+                </div>
+                <div className="status-item">
+                  <span className="status-icon">🟢</span>
+                  <span>Download clients connected</span>
+                </div>
+                <div className="status-item">
+                  <span className="status-icon">🟢</span>
+                  <span>Services coordinated</span>
+                </div>
+              </div>
+              <button className="btn-primary" onClick={handleComplete}>
+                ✓ Setup Complete - Go to Dashboard
+              </button>
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </ThreePaneLayout>
   );
 };
 

@@ -1,0 +1,122 @@
+/* Color-coded Callout Boxes - Information Hierarchy System */
+
+.callout-box {
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-left: 4px solid;
+}
+
+.callout-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.callout-icon {
+  font-size: 18px;
+}
+
+.callout-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.callout-content {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.callout-content p {
+  margin: 0 0 8px 0;
+}
+
+.callout-content p:last-child {
+  margin-bottom: 0;
+}
+
+.callout-content ul,
+.callout-content ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.callout-content li {
+  margin-bottom: 6px;
+}
+
+.callout-content code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+/* Blue: Configuration/Value summaries */
+.callout-blue {
+  background: #f0f8ff;
+  border-color: #2196F3;
+}
+
+.callout-blue .callout-title {
+  color: #1565c0;
+}
+
+.callout-blue .callout-content {
+  color: #0d47a1;
+}
+
+/* Orange/Yellow: Warnings or dependencies */
+.callout-orange {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.callout-orange .callout-title {
+  color: #e65100;
+}
+
+.callout-orange .callout-content {
+  color: #e65100;
+}
+
+/* Green: Minimum requirements or success states */
+.callout-green {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.callout-green .callout-title {
+  color: #1b5e20;
+}
+
+.callout-green .callout-content {
+  color: #1b5e20;
+}
+
+/* Purple/Pink: Documentation and external links */
+.callout-purple {
+  background: #f3e5f5;
+  border-color: #9c27b0;
+}
+
+.callout-purple .callout-title {
+  color: #6a1b9a;
+}
+
+.callout-purple .callout-content {
+  color: #6a1b9a;
+}
+
+.callout-purple .callout-content a {
+  color: #7b1fa2;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.callout-purple .callout-content a:hover {
+  text-decoration: underline;
+}

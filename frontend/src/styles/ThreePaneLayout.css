@@ -1,0 +1,81 @@
+/* Three-Pane Layout Styles - Unified for Wizard, Dashboard, and Post-Deployment */
+
+.three-pane-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+/* Persistent Sidebar (Left) */
+.three-pane-sidebar {
+  background: white;
+  border-right: 1px solid #dee2e6;
+  padding: 20px;
+  overflow-y: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+/* Fluid Main Canvas (Center) - Expands to fill space */
+.three-pane-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* NO max-width constraints - fills remaining space */
+}
+
+/* Main Content Area */
+.three-pane-content {
+  flex: 1;
+  overflow: auto;
+  padding: 30px 40px;
+}
+
+/* White card container for content */
+.three-pane-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 20px;
+}
+
+/* Fixed Navigation Bar (Bottom) */
+.three-pane-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  background: white;
+  border-top: 1px solid #dee2e6;
+  flex-shrink: 0;
+  gap: 20px;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .three-pane-layout {
+    flex-direction: column;
+  }
+
+  .three-pane-sidebar {
+    width: 100% !important;
+    border-right: none;
+    border-bottom: 1px solid #dee2e6;
+    max-height: 150px;
+  }
+
+  .three-pane-content {
+    padding: 20px;
+  }
+
+  .three-pane-footer {
+    padding: 15px 20px;
+    flex-wrap: wrap;
+  }
+}

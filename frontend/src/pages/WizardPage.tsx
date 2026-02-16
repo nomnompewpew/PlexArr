@@ -6,6 +6,8 @@ import { StorageStep } from '../components/steps/StorageStep';
 import { ServicesStep } from '../components/steps/ServicesStep';
 import { ReviewStep } from '../components/steps/ReviewStep';
 import { ContextLabel } from '../components/ContextLabel';
+import { ThreePaneLayout } from '../components/ThreePaneLayout';
+import { CalloutBox } from '../components/CalloutBox';
 import './WizardPage.css';
 
 type StepId = 'welcome' | 'system' | 'storage' | 'services' | 'review';
@@ -115,36 +117,38 @@ const WizardPage: React.FC = () => {
 
   const renderWelcomeStep = () => (
     <div className="step-content">
-      <div className="welcome-hero">
-        <h2>Welcome to PlexArr! 🎉</h2>
-        <p className="subtitle">Set up your unified Plex media server in minutes</p>
-      </div>
-      <div className="info-boxes">
-        <div className="info-box">
-          <h3>📦 What is PlexArr?</h3>
-          <p>
-            PlexArr unifies your Plex media server setup by automatically configuring
-            and connecting all your Arr applications with download clients.
-          </p>
-        </div>
-        <div className="info-box">
-          <h3>🚀 What will this wizard do?</h3>
-          <ul>
-            <li>Guide you through storage, services, and ports</li>
-            <li>Validate your configuration</li>
-            <li>Generate and deploy docker-compose</li>
-          </ul>
-        </div>
-      </div>
+      <h2 className="step-heading">Welcome to PlexArr! 🎉</h2>
+      <p className="step-description">Set up your unified Plex media server in minutes</p>
+      
+      <CalloutBox type="blue" icon="📦" title="What is PlexArr?">
+        <p>
+          PlexArr unifies your Plex media server setup by automatically configuring
+          and connecting all your Arr applications with download clients.
+        </p>
+      </CalloutBox>
+
+      <CalloutBox type="green" icon="🚀" title="What will this wizard do?">
+        <ul>
+          <li>Guide you through storage, services, and ports</li>
+          <li>Validate your configuration</li>
+          <li>Generate and deploy docker-compose</li>
+        </ul>
+      </CalloutBox>
     </div>
   );
 
   const renderSystemStep = () => (
     <div className="step-content">
-      <h2>System Configuration</h2>
-      <p className="help-text">
+      <h2 className="step-heading">System Configuration</h2>
+      <p className="step-description">
         Configure basic system settings used by all containers.
       </p>
+
+      <CalloutBox type="orange" icon="⚠️" title="Important: Get Correct Values">
+        <p>
+          PUID and PGID must match your system user. Don't guess - run the commands shown below to get the correct values.
+        </p>
+      </CalloutBox>
 
       <div className="form-group">
         <label htmlFor="timezone">Timezone *</label>
@@ -268,59 +272,140 @@ const WizardPage: React.FC = () => {
     }
   };
 
-  return (
-    <div className="wizard-page">
-      <div className="wizard-header">
-        <h1>🎬 PlexArr Setup Wizard</h1>
-        <p>Unified Plex Media Server Configuration</p>
-        <div className="progress-bar">
-          <div className="progress-fill" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="step-indicator">
-          Step {currentStepIndex + 1} of {STEPS.length}: {currentStep.title}
-        </div>
-      </div>
-
-      <div className="wizard-content">
-        {renderStepContent()}
-        {deployError && (
-          <div className="warning-box">
-            <strong>Deployment error:</strong> {deployError}
+  // Sidebar content with progress tracking
+  const renderSidebar = () => (
+    <>
+      <h2 style={{ fontSize: '18px', margin: '0 0 20px 0', color: '#333' }}>Setup Progress</h2>
+      
+      {/* Steps List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '30px' }}>
+        {STEPS.map((step, idx) => (
+          <div
+            key={step.id}
+            className={`step-item ${idx === currentStepIndex ? 'active' : ''} ${idx < currentStepIndex ? 'completed' : ''}`}
+            onClick={() => setCurrentStepIndex(idx)}
+            style={{
+              display: 'flex',
+              gap: '12px',
+              padding: '12px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              background: idx === currentStepIndex ? '#e3f2fd' : idx < currentStepIndex ? '#e8f5e9' : '#f9f9f9',
+              borderLeft: idx === currentStepIndex ? '4px solid #2196F3' : '4px solid transparent',
+              paddingLeft: idx === currentStepIndex ? '8px' : '12px'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              background: idx < currentStepIndex ? '#4caf50' : idx === currentStepIndex ? '#2196F3' : '#e0e0e0',
+              color: idx <= currentStepIndex ? 'white' : '#666',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              flexShrink: 0
+            }}>
+              {idx < currentStepIndex ? '✓' : idx + 1}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: '14px', color: '#333' }}>{step.title}</div>
+              <div style={{ fontSize: '12px', color: '#999', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {step.description}
+              </div>
+            </div>
           </div>
-        )}
+        ))}
       </div>
 
-      <div className="wizard-actions">
-        {currentStepIndex > 0 && (
-          <button onClick={handlePrevious} className="btn btn-secondary">
-            ← Previous
-          </button>
-        )}
-        {currentStepIndex < STEPS.length - 1 && (
-          <button onClick={handleNext} className="btn btn-primary">
-            Next →
-          </button>
-        )}
-        {currentStepIndex === STEPS.length - 1 && (
-          <button onClick={handleDeploy} className="btn btn-success" disabled={deploying}>
-            {deploying ? 'Deploying...' : '🚀 Deploy Now'}
-          </button>
-        )}
-      </div>
-
-      <div className="wizard-footer">
-        <div className="step-dots">
-          {STEPS.map((step, index) => (
-            <div
-              key={step.id}
-              className={`dot ${index === currentStepIndex ? 'active' : ''} ${index < currentStepIndex ? 'completed' : ''}`}
-              title={step.title}
-              onClick={() => setCurrentStepIndex(index)}
-            />
-          ))}
+      {/* Progress Bar */}
+      <div style={{ paddingTop: '20px', borderTop: '1px solid #dee2e6' }}>
+        <div style={{
+          width: '100%',
+          height: '8px',
+          background: '#e0e0e0',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          marginBottom: '10px'
+        }}>
+          <div style={{
+            height: '100%',
+            background: 'linear-gradient(90deg, #4caf50, #45a049)',
+            width: `${progress}%`,
+            transition: 'width 0.3s ease'
+          }} />
         </div>
+        <p style={{
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#666',
+          margin: 0
+        }}>
+          Step {currentStepIndex + 1} of {STEPS.length}
+        </p>
       </div>
-    </div>
+    </>
+  );
+
+  // Footer with navigation buttons
+  const renderFooter = () => (
+    <>
+      {currentStepIndex > 0 && (
+        <button onClick={handlePrevious} className="btn btn-secondary">
+          ← Previous
+        </button>
+      )}
+      <div style={{ flex: 1 }} />
+      {deployError && (
+        <div style={{ color: '#dc3545', fontSize: '13px', maxWidth: '300px' }}>
+          <strong>Error:</strong> {deployError}
+        </div>
+      )}
+      {currentStepIndex < STEPS.length - 1 && (
+        <button onClick={handleNext} className="btn btn-primary">
+          Next →
+        </button>
+      )}
+      {currentStepIndex === STEPS.length - 1 && (
+        <button onClick={handleDeploy} className="btn btn-success" disabled={deploying}>
+          {deploying ? 'Deploying...' : '🚀 Deploy Now'}
+        </button>
+      )}
+    </>
+  );
+
+  return (
+    <ThreePaneLayout
+      sidebar={renderSidebar()}
+      footer={renderFooter()}
+    >
+      {/* Page Header */}
+      <div style={{
+        background: 'white',
+        borderRadius: '12px 12px 0 0',
+        padding: '30px',
+        marginLeft: '-40px',
+        marginRight: '-40px',
+        marginTop: '-30px',
+        marginBottom: '30px',
+        borderBottom: '1px solid #dee2e6'
+      }}>
+        <h1 style={{ fontSize: '28px', margin: '0 0 10px 0', color: '#333' }}>
+          🎬 {currentStep.title}
+        </h1>
+        <p style={{ fontSize: '14px', color: '#666', margin: 0 }}>
+          {currentStep.description}
+        </p>
+      </div>
+
+      {/* Main Content Card */}
+      <div className="three-pane-card">
+        {renderStepContent()}
+      </div>
+    </ThreePaneLayout>
   );
 };
 

@@ -1,27 +1,15 @@
 /* Post-Deployment Setup Wizard Styles */
 
-.post-deployment-wizard {
+.setup-loading {
   display: flex;
+  align-items: center;
+  justify-content: center;
   height: 100vh;
-  overflow: hidden;
-  background: #f5f5f5;
-}
-
-.setup-sidebar {
-  width: 300px;
-  background: white;
-  border-right: 1px solid #dee2e6;
-  padding: 20px;
-  overflow-y: auto;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.setup-sidebar h2 {
   font-size: 18px;
-  margin: 0 0 20px 0;
-  color: #333;
+  color: #666;
 }
 
+/* Steps List (Sidebar) */
 .steps-list {
   display: flex;
   flex-direction: column;
@@ -130,18 +118,13 @@
   margin: 0;
 }
 
-.setup-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
+/* Page Header */
 .setup-header {
-  padding: 30px 40px;
+  padding: 30px;
   background: white;
+  border-radius: 12px 12px 0 0;
+  margin: -30px -40px 30px -40px;
   border-bottom: 1px solid #dee2e6;
-  flex-shrink: 0;
 }
 
 .setup-header h1 {
@@ -156,26 +139,28 @@
   margin: 0;
 }
 
+/* Setup Content */
 .setup-content {
-  flex: 1;
-  overflow: auto;
-  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .service-frame {
-  height: 100%;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  min-height: 600px;
   display: flex;
   flex-direction: column;
 }
 
 .service-iframe {
   width: 100%;
-  height: 100%;
+  flex: 1;
   border: none;
+  min-height: 600px;
 }
 
 .setup-instructions {
@@ -257,17 +242,7 @@
   flex-shrink: 0;
 }
 
-.setup-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-  background: white;
-  border-top: 1px solid #dee2e6;
-  flex-shrink: 0;
-  gap: 20px;
-}
-
+/* Footer Navigation */
 .nav-middle {
   display: flex;
   align-items: center;
@@ -288,7 +263,7 @@
 .btn-link {
   padding: 10px 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
   font-weight: 600;
@@ -336,46 +311,18 @@
   text-decoration: underline;
 }
 
-.setup-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  font-size: 18px;
-  color: #666;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-  .post-deployment-wizard {
-    flex-direction: column;
-  }
-
-  .setup-sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #dee2e6;
-    max-height: 150px;
-  }
-
-  .setup-main {
-    flex: 1;
-  }
-
   .setup-header {
     padding: 20px;
+    margin: -20px -20px 20px -20px;
   }
 
   .setup-header h1 {
     font-size: 20px;
   }
 
-  .setup-content {
-    padding: 20px;
-  }
-
-  .setup-nav {
-    padding: 15px 20px;
-    flex-wrap: wrap;
+  .service-iframe {
+    min-height: 400px;
   }
 }

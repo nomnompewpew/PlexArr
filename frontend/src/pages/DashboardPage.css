@@ -1,31 +1,6 @@
-.dashboard-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-}
+/* DashboardPage Styles - Simplified as Dashboard component manages its own layout */
 
-.dashboard-header {
-  text-align: center;
-  color: white;
-  margin-bottom: 40px;
-}
-
-.dashboard-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-  font-weight: 700;
-}
-
-.dashboard-header p {
-  font-size: 1.2rem;
-  opacity: 0.9;
-}
-
-.dashboard-content {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
+/* These styles are kept for backward compatibility but are mostly unused now */
 .info-card {
   background: white;
   border-radius: 12px;
@@ -118,8 +93,5 @@
   .services-grid {
     grid-template-columns: 1fr;
   }
-
-  .dashboard-header h1 {
-    font-size: 2rem;
-  }
 }
+
