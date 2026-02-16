@@ -1,0 +1,26 @@
+[package]
+name = "plexarr-installer"
+version = "1.0.0"
+description = "PlexArr Installer"
+authors = ["PlexArr Team"]
+license = "MIT"
+repository = "https://github.com/nomnompewpew/PlexArr"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "1.5.0", features = [] }
+
+[dependencies]
+tauri = { version = "1.5.4", features = ["dialog-all", "fs-all", "http-all", "os-all", "path-all", "shell-all", "window-all"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+hostname = "0.3"
+libc = "0.2"
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]

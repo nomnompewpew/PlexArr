@@ -42,3 +42,9 @@ temp/
 /backend/generated-config/
 /backend/data/
 /data/
+
+# Installer build artifacts
+/installer/dist/
+/installer/dist-ssr/
+/installer/src-tauri/target/
+/installer/node_modules/
