@@ -6,6 +6,7 @@ A unified Plex and Arr management solution that simplifies the setup and configu
 
 PlexArr unifies the disjointed multiple docker run setup that requires each API key to be manually connected between containers for a Plex media server. Instead of manually configuring each service and connecting them together, PlexArr provides:
 
+- **🆕 Cross-Platform Installer**: One-click desktop installer for Windows, macOS, and Linux that handles Docker, WSL2, and all dependencies automatically
 - **Setup Wizard**: User-friendly interface that guides you through configuration
 - **Automatic API Coordination**: Services are automatically connected and configured
 - **AI-Powered Configuration**: Optional AI agent for intelligent setup recommendations (Gemini, OpenAI, Claude)
@@ -15,6 +16,19 @@ PlexArr unifies the disjointed multiple docker run setup that requires each API 
 - **Low Configuration**: Predefined sensible defaults for quick setup
 
 See the [ROADMAP.md](ROADMAP.md) for planned work and in-progress areas.
+
+## 🆕 New: Cross-Platform Installer
+
+We've added a **Tauri-based desktop installer** that makes PlexArr installation as simple as double-clicking an app:
+
+✨ **Key Features:**
+- Download-on-demand Docker and WSL2 installation
+- Automatic prerequisite checking and installation
+- State persistence (resume after reboot or re-login)
+- Smart fallback to manual instructions with official links
+- Works on Windows 10/11, macOS 10.15+, and all major Linux distributions
+
+📖 **Learn More:** [Complete Installer Guide](INSTALLER_GUIDE.md)
 
 ## 📦 Included Services
 
@@ -44,17 +58,40 @@ PlexArr manages and coordinates the following services:
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Installation Methods
 
+#### Option 1: Cross-Platform Installer (Recommended) 🆕
+
+The easiest way to install PlexArr is using our new cross-platform installer that handles **everything** for you:
+
+**Features:**
+- 🎯 **One-Click Install**: Double-click and go!
+- 📦 **Auto-Downloads Dependencies**: Installs Docker, WSL2 (Windows), and PlexArr
+- 🔄 **Resume After Reboot**: State-saving handles reboots and re-logins
+- 🛠️ **Smart Fallback**: Manual instructions if auto-install fails
+- ✅ **Works Everywhere**: Windows, macOS, and Linux
+
+**Downloads:**
+- [Windows Installer](https://github.com/nomnompewpew/PlexArr/releases) (.exe)
+- [macOS Installer](https://github.com/nomnompewpew/PlexArr/releases) (.dmg)
+- [Linux Installer](https://github.com/nomnompewpew/PlexArr/releases) (.AppImage)
+
+**See:** [Complete Installer Guide](INSTALLER_GUIDE.md)
+
+---
+
+#### Option 2: Automated Setup Script
+
+If you already have Docker installed and prefer a script-based approach:
+
+**Prerequisites:**
 - Docker and Docker Compose installed
 - Node.js 16+ and npm 7+
 - At least 4GB RAM
 - Storage space for media files
 - Linux host (or WSL2 on Windows)
 
-### Installation (Automated)
-
-The easiest way to set up PlexArr is using the automated setup script:
+**Installation:**
 
 ```bash
 git clone https://github.com/nomnompewpew/PlexArr.git
@@ -76,7 +113,9 @@ The script will:
 
 Once complete, open **http://localhost:3000** to start the wizard!
 
-### Installation (Manual)
+---
+
+#### Option 3: Manual Installation
 
 For detailed manual setup instructions, see [SETUP.md](SETUP.md)
 
