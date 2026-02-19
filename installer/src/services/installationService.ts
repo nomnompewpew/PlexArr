@@ -208,10 +208,10 @@ export class InstallationService {
       await this.log('No old clone directory to remove');
     }
 
-    // Clone from GitHub
+    // Clone from GitHub (eclipse branch with Electron installer)
     try {
-      await this.log('Cloning PlexArr from GitHub (nomnompewpew/PlexArr)...');
-      const result = await platformAPI.executeCommand('git', ['clone', '--depth', '1', 'https://github.com/nomnompewpew/PlexArr.git', clonePath]);
+      await this.log('Cloning PlexArr from GitHub (nomnompewpew/PlexArr, eclipse branch)...');
+      const result = await platformAPI.executeCommand('git', ['clone', '--depth', '1', '--branch', 'eclipse', 'https://github.com/nomnompewpew/PlexArr.git', clonePath]);
       await this.log(`Git clone completed: ${result}`);
       return clonePath;
     } catch (error) {
