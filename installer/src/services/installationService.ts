@@ -15,6 +15,8 @@ export class InstallationService {
   private passwordCallback?: () => Promise<string>;
   private cachedPassword?: string;
   private logFile = `/tmp/plexarr-install-debug-${Date.now()}.log`;
+  private logBuffer: string[] = [];
+  private logFlushTimer?: NodeJS.Timeout;
 
   setProgressCallback(callback: (progress: InstallationProgress) => void) {
     this.progressCallback = callback;
@@ -27,15 +29,35 @@ export class InstallationService {
   private async log(message: string): Promise<void> {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${message}`;
-    console.log(logMessage); // Also log to console
+    console.log(logMessage);
     
-    try {
-      // Try to write to file via a shell command
-      await platformAPI.executeCommand('bash', ['-c', `echo "${logMessage.replace(/"/g, '\\"')}" >> ${this.logFile}`]);
-    } catch {
-      // If logging fails, just continue
-      console.error(`Failed to log to ${this.logFile}`);
+    // Batch log writes to avoid overwhelming the system
+    this.logBuffer.push(logMessage);
+    
+    // Flush logs every 500ms or when buffer gets large
+    if (this.logBuffer.length >= 10) {
+      this.flushLogs();
+    } else {
+      if (this.logFlushTimer) {
+        clearTimeout(this.logFlushTimer);
+      }
+      this.logFlushTimer = setTimeout(() => this.flushLogs(), 500);
     }
+  }
+
+  private flushLogs(): void {
+    if (this.logBuffer.length === 0) return;
+    
+    const logs = this.logBuffer.join('\n');
+    this.logBuffer = [];
+    
+    // Use platformAPI to append logs without waiting
+    platformAPI.executeCommand('bash', [
+      '-c',
+      `echo "${logs.replace(/"/g, '\\"')}" >> ${this.logFile}`
+    ]).catch(() => {
+      // Ignore log write failures
+    });
   }
 
   private updateProgress(status: InstallationProgress['status'], progress: number, message: string) {
@@ -118,8 +140,10 @@ export class InstallationService {
       this.updateProgress('waiting_for_services', 100, 'Installation complete!');
       await this.log(`=== Installation Complete ===`);
       await this.log(`Log file: ${this.logFile}`);
+      this.flushLogs(); // Ensure all logs are written
     } catch (error) {
       await this.log(`ERROR: ${error}`);
+      this.flushLogs(); // Ensure error is logged
       throw new Error(`Installation failed: ${error}`);
     }
   }

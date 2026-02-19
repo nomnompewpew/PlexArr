@@ -10,6 +10,19 @@ const execAsync = promisify(exec);
 
 let mainWindow: BrowserWindow | null = null;
 
+// Prevent app from crashing on uncaught errors
+process.on('uncaughtException', (error) => {
+  // Ignore EPIPE errors which happen when logging to closed streams
+  if (error.message.includes('EPIPE') || error.message.includes('write after end')) {
+    return;
+  }
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -53,6 +66,23 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+// Safe logging that won't crash on EPIPE errors
+function safeLog(...args: any[]) {
+  try {
+    console.log(...args);
+  } catch (error) {
+    // Silently ignore logging errors (EPIPE, etc.)
+  }
+}
+
+function safeError(...args: any[]) {
+  try {
+    console.error(...args);
+  } catch (error) {
+    // Silently ignore logging errors
+  }
+}
 
 // IPC Handlers
 
@@ -111,7 +141,10 @@ ipcMain.handle('check-disk-space', async (_event, checkPath?: string) => {
  * This is the core function that replaces Tauri's execute_command
  */
 ipcMain.handle('execute-command', async (_event, command: string, args: string[]) => {
-  console.log(`[EXEC] ${command} ${args.join(' ')}`);
+  // Only log important commands to avoid EPIPE errors
+  if (!command.includes('echo')) {
+    safeLog(`[EXEC] ${command} ${args.slice(0, 2).join(' ')}${args.length > 2 ? '...' : ''}`);
+  }
   
   return new Promise<string>((resolve, reject) => {
     // Special handling for commands that should run in background
@@ -119,8 +152,6 @@ ipcMain.handle('execute-command', async (_event, command: string, args: string[]
       // For nohup commands, spawn detached process
       const actualCommand = args[0];
       const actualArgs = args.slice(1);
-      
-      console.log(`[SPAWN DETACHED] ${actualCommand} ${actualArgs.join(' ')}`);
       
       const child = spawn(actualCommand, actualArgs, {
         detached: true,
@@ -152,11 +183,12 @@ ipcMain.handle('execute-command', async (_event, command: string, args: string[]
       shell: '/bin/bash',
     }, (error, stdout, stderr) => {
       if (error) {
-        console.error(`[EXEC ERROR] ${error.message}`);
-        console.error(`[STDERR] ${stderr}`);
+        // Only log actual errors, not expected failures
+        if (!error.message.includes('sudo') && !stderr.includes('password')) {
+          safeError(`[EXEC ERROR] ${error.message.substring(0, 100)}`);
+        }
         reject(stderr || error.message);
       } else {
-        console.log(`[STDOUT] ${stdout.substring(0, 200)}${stdout.length > 200 ? '...' : ''}`);
         resolve(stdout);
       }
     });
@@ -209,4 +241,4 @@ ipcMain.handle('open-external', async (_event, target: string) => {
   await shell.openExternal(target);
 });
 
-console.log('Electron main process initialized');
+safeLog('Electron main process initialized');
