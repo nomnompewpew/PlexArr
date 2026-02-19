@@ -46,5 +46,7 @@ temp/
 # Installer build artifacts
 /installer/dist/
 /installer/dist-ssr/
+/installer/dist-electron/
+/installer/release/
 /installer/src-tauri/target/
 /installer/node_modules/

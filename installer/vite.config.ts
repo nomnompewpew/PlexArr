@@ -5,25 +5,21 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   
-  // Prevent vite from obscuring rust errors
   clearScreen: false,
   
-  // Tauri expects a fixed port, fail if that port is not available
   server: {
     port: 5173,
     strictPort: true,
   },
   
-  // To make use of `TAURI_DEBUG` and other env variables
-  // https://tauri.studio/v1/api/config#buildconfig.beforedevcommand
-  envPrefix: ['VITE_', 'TAURI_'],
+  envPrefix: ['VITE_'],
   
   build: {
-    // Tauri supports es2021
-    target: process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari13',
-    // Don't minify for debug builds
-    minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
-    // Produce sourcemaps for debug builds
-    sourcemap: !!process.env.TAURI_DEBUG,
+    target: 'es2020',
+    outDir: 'dist',
+    sourcemap: true,
   },
+  
+  // For Electron integration
+  base: './',
 });
