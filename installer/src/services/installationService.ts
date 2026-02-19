@@ -352,42 +352,91 @@ export class InstallationService {
    * Start PlexArr services using docker compose (modern syntax)
    */
   private async startPlexArrServices(installPath: string, systemInfo: SystemInfo): Promise<void> {
-    // Determine the docker-compose file path
-    const composeFile = systemInfo.platform === 'windows'
-      ? `${installPath}\\docker-compose.yml`
-      : `${installPath}/docker-compose.yml`;
+    await this.log(`Starting Docker services from: ${installPath}`);
 
-    await this.log(`Docker compose file path: ${composeFile}`);
+    // Verify Docker is installed and running
+    try {
+      await this.log('Checking if Docker is installed and running...');
+      const dockerVersion = await platformAPI.executeCommand('docker', ['--version']);
+      await this.log(`Docker version: ${dockerVersion.trim()}`);
+      
+      // Check if Docker daemon is running
+      const dockerInfo = await platformAPI.executeCommand('docker', ['info']);
+      await this.log('Docker daemon is running');
+    } catch (err) {
+      await this.log(`ERROR: Docker is not running or not installed: ${err}`);
+      throw new Error('Docker is not installed or not running. Please install Docker first.');
+    }
 
-    // Verify docker-compose file exists
+    // Verify docker compose works (modern syntax without hyphen)
+    try {
+      await this.log('Verifying docker compose command...');
+      const composeVersion = await platformAPI.executeCommand('docker', ['compose', 'version']);
+      await this.log(`Docker Compose version: ${composeVersion.trim()}`);
+    } catch (err) {
+      await this.log(`ERROR: docker compose command failed: ${err}`);
+      throw new Error('Docker Compose is not available. Please ensure Docker Desktop or Compose plugin is installed.');
+    }
+
+    // Verify docker-compose.yml exists
+    const composeFile = `${installPath}/docker-compose.yml`;
     try {
       await this.log('Verifying docker-compose.yml exists...');
       await platformAPI.executeCommand('test', ['-f', composeFile]);
       await this.log('docker-compose.yml found!');
     } catch {
-      await this.log(`docker-compose.yml NOT found at: ${composeFile}`);
+      await this.log(`ERROR: docker-compose.yml NOT found at: ${composeFile}`);
       throw new Error('docker-compose.yml not found in installation directory');
     }
 
-    // Run 'docker compose up --build' in background
-    // Use nohup to truly background the process so it doesn't block
+    // Change to the installation directory and run docker compose
+    // This ensures relative paths in docker-compose.yml work correctly
+    const cdAndCompose = `cd ${installPath} && docker compose up --build -d`;
+    
     try {
       // Try without sudo first
-      await this.log('Attempting docker compose without sudo...');
-      const result = await platformAPI.executeCommand('nohup', ['docker', 'compose', '-f', composeFile, 'up', '--build', '-d']);
-      await this.log(`Docker compose started (no sudo needed): ${result}`);
-    } catch {
+      await this.log('Attempting: docker compose up --build -d (without sudo)...');
+      const result = await platformAPI.executeCommand('bash', ['-c', cdAndCompose]);
+      await this.log(`Docker compose output: ${result.substring(0, 500)}`);
+      await this.log('Docker compose command completed (no sudo needed)');
+    } catch (err) {
       // If that fails, try with sudo
+      await this.log(`Without sudo failed: ${err}`);
       try {
-        await this.log('Docker compose without sudo failed, trying with sudo...');
+        await this.log('Attempting with sudo...');
         const password = await this.getPassword();
         const escapedPassword = password.replace(/\\/g, '\\\\').replace(/\$/g, '\\$').replace(/`/g, '\\`');
-        const result = await platformAPI.executeCommand('bash', ['-c', `echo "${escapedPassword}" | sudo -S nohup docker compose -f ${composeFile} up --build -d > /dev/null 2>&1 &`]);
-        await this.log(`Docker compose started (with sudo): ${result}`);
-      } catch (err) {
-        await this.log(`Failed to start Docker services: ${err}`);
-        throw new Error(`Failed to start Docker services: ${err}`);
+        const sudoCommand = `echo "${escapedPassword}" | sudo -S bash -c "cd ${installPath} && docker compose up --build -d"`;
+        const result = await platformAPI.executeCommand('bash', ['-c', sudoCommand]);
+        await this.log(`Docker compose output (sudo): ${result.substring(0, 500)}`);
+        await this.log('Docker compose command completed (with sudo)');
+      } catch (sudoErr) {
+        await this.log(`FATAL: Failed to start Docker services: ${sudoErr}`);
+        throw new Error(`Failed to start Docker services: ${sudoErr}`);
       }
+    }
+
+    // Give Docker a moment to create containers before we start checking
+    await this.log('Waiting 10 seconds for Docker containers to initialize...');
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    
+    // Verify containers were created
+    try {
+      const allContainers = await platformAPI.executeCommand('docker', ['ps', '-a', '--format', '{{.Names}}']);
+      await this.log(`All Docker containers (after compose): ${allContainers}`);
+      
+      if (!allContainers.includes('plexarr')) {
+        await this.log('WARNING: No plexarr containers found after docker compose!');
+        await this.log('Checking docker compose logs...');
+        try {
+          const logs = await platformAPI.executeCommand('bash', ['-c', `cd ${installPath} && docker compose logs --tail=50`]);
+          await this.log(`Docker compose logs: ${logs}`);
+        } catch {
+          await this.log('Could not fetch docker compose logs');
+        }
+      }
+    } catch (err) {
+      await this.log(`Could not verify containers: ${err}`);
     }
   }
 
@@ -403,21 +452,36 @@ export class InstallationService {
 
     while (attempts < maxAttempts) {
       try {
-        // Check if plexarr-backend container is running (primary service)
-        const psOutput = await platformAPI.executeCommand('docker', ['ps', '--filter', 'name=plexarr-backend', '--format', '{{.Names}}']);
+        // Check all running containers, not just backend
+        const psOutput = await platformAPI.executeCommand('docker', ['ps', '--format', '{{.Names}}']);
+        
+        await this.log(`Attempt ${attempts + 1}/${maxAttempts}: Running containers: ${psOutput.trim() || '(none)'}`);
 
-        if (psOutput && psOutput.toLowerCase().includes('plexarr-backend')) {
-          await this.log(`Container plexarr-backend found! Output: "${psOutput.trim()}"`);
-          // Backend is running, wait a moment for frontend to start too
-          await this.log('Waiting 2 seconds for frontend container to start...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          await this.log('Services are healthy!');
-          return;
-        } else {
-          await this.log(`Attempt ${attempts + 1}/${maxAttempts}: plexarr-backend not running yet. Output: "${psOutput?.trim() || '(empty)'}"`);
+        // Check if ANY plexarr container is running
+        if (psOutput && psOutput.toLowerCase().includes('plexarr')) {
+          await this.log(`PlexArr containers found and running!`);
+          
+          // Check specifically for backend and frontend
+          const backendRunning = psOutput.toLowerCase().includes('backend');
+          const frontendRunning = psOutput.toLowerCase().includes('frontend');
+          
+          await this.log(`Backend: ${backendRunning ? 'RUNNING' : 'NOT FOUND'}, Frontend: ${frontendRunning ? 'RUNNING' : 'NOT FOUND'}`);
+          
+          if (backendRunning || frontendRunning) {
+            await this.log('Core services are running! Waiting 3 seconds for initialization...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            await this.log('Services are healthy!');
+            return;
+          }
         }
+        
+        // If no containers found, check if they exist but are stopped
+        if (attempts % 5 === 0) {
+          const allContainers = await platformAPI.executeCommand('docker', ['ps', '-a', '--filter', 'name=plexarr', '--format', '{{.Names}} ({{.Status}})']);
+          await this.log(`All PlexArr containers (running or stopped): ${allContainers.trim() || '(none)'}`);
+        }
+        
       } catch (err) {
-        // docker command failed, wait and try again
         await this.log(`Attempt ${attempts + 1}/${maxAttempts}: docker ps check failed: ${err}`);
       }
 
@@ -428,6 +492,15 @@ export class InstallationService {
     }
 
     await this.log(`ERROR: Services did not start within ${timeout}ms (${maxAttempts} attempts)`);
+    
+    // Final diagnostic check
+    try {
+      const finalCheck = await platformAPI.executeCommand('docker', ['ps', '-a', '--format', '{{.Names}} - {{.Status}}']);
+      await this.log(`Final container status: ${finalCheck}`);
+    } catch {
+      await this.log('Could not perform final diagnostic check');
+    }
+    
     throw new Error('Services did not start within timeout period');
   }
 }
