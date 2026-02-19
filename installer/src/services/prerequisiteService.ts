@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri';
+import { platformAPI } from './platformAPI';
 import type { PrerequisiteCheck, SystemInfo, DiskSpace } from '../types/installer';
 
 /**
@@ -88,10 +88,7 @@ export class PrerequisiteService {
    */
   private async checkWindowsVersion(): Promise<PrerequisiteCheck> {
     try {
-      const version = await invoke<string>('execute_command', {
-        command: 'cmd',
-        args: ['/c', 'ver']
-      });
+      const version = await platformAPI.executeCommand('cmd', ['/c', 'ver']);
 
       // Windows 10 version 2004 or later is required for WSL2
       const isCompatible = version.includes('10.0.') || version.includes('11.');
@@ -121,10 +118,7 @@ export class PrerequisiteService {
    */
   private async checkWSL2(): Promise<PrerequisiteCheck> {
     try {
-      const result = await invoke<string>('execute_command', {
-        command: 'wsl',
-        args: ['--status']
-      });
+      const result = await platformAPI.executeCommand('wsl', ['--status']);
 
       const hasWSL2 = result.includes('WSL 2') || result.includes('Default Version: 2');
 
@@ -153,10 +147,7 @@ export class PrerequisiteService {
    */
   private async checkDockerWindows(): Promise<PrerequisiteCheck> {
     try {
-      const result = await invoke<string>('execute_command', {
-        command: 'docker',
-        args: ['--version']
-      });
+      const result = await platformAPI.executeCommand('docker', ['--version']);
 
       const hasDocker = result.toLowerCase().includes('docker');
 
@@ -185,10 +176,7 @@ export class PrerequisiteService {
    */
   private async checkHyperV(): Promise<PrerequisiteCheck> {
     try {
-      const result = await invoke<string>('execute_command', {
-        command: 'powershell',
-        args: ['-Command', 'Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All | Select-Object -ExpandProperty State']
-      });
+      const result = await platformAPI.executeCommand('powershell', ['-Command', 'Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All | Select-Object -ExpandProperty State']);
 
       const isEnabled = result.trim().toLowerCase() === 'enabled';
 
@@ -232,10 +220,7 @@ export class PrerequisiteService {
    */
   private async checkMacOSVersion(): Promise<PrerequisiteCheck> {
     try {
-      const version = await invoke<string>('execute_command', {
-        command: 'sw_vers',
-        args: ['-productVersion']
-      });
+      const version = await platformAPI.executeCommand('sw_vers', ['-productVersion']);
 
       const versionNumber = parseFloat(version.trim().split('.').slice(0, 2).join('.'));
       const isCompatible = versionNumber >= 10.15; // Catalina or later
@@ -265,10 +250,7 @@ export class PrerequisiteService {
    */
   private async checkDockerMacOS(): Promise<PrerequisiteCheck> {
     try {
-      const result = await invoke<string>('execute_command', {
-        command: 'docker',
-        args: ['--version']
-      });
+      const result = await platformAPI.executeCommand('docker', ['--version']);
 
       const hasDocker = result.toLowerCase().includes('docker');
 
@@ -315,10 +297,7 @@ export class PrerequisiteService {
    */
   private async checkDockerLinux(): Promise<PrerequisiteCheck> {
     try {
-      const result = await invoke<string>('execute_command', {
-        command: 'docker',
-        args: ['--version']
-      });
+      const result = await platformAPI.executeCommand('docker', ['--version']);
 
       const hasDocker = result.toLowerCase().includes('docker');
 
@@ -348,10 +327,7 @@ export class PrerequisiteService {
   private async checkDockerCompose(): Promise<PrerequisiteCheck> {
     try {
       // Try docker compose plugin first
-      const pluginResult = await invoke<string>('execute_command', {
-        command: 'docker',
-        args: ['compose', 'version']
-      });
+      const pluginResult = await platformAPI.executeCommand('docker', ['compose', 'version']);
 
       if (pluginResult.toLowerCase().includes('docker compose')) {
         return {
@@ -365,10 +341,7 @@ export class PrerequisiteService {
     } catch {
       // Plugin not available, try standalone
       try {
-        const standaloneResult = await invoke<string>('execute_command', {
-          command: 'docker-compose',
-          args: ['--version']
-        });
+        const standaloneResult = await platformAPI.executeCommand('docker-compose', ['--version']);
 
         if (standaloneResult.toLowerCase().includes('docker-compose')) {
           return {
@@ -398,10 +371,7 @@ export class PrerequisiteService {
    */
   private async checkDockerGroup(): Promise<PrerequisiteCheck> {
     try {
-      const result = await invoke<string>('execute_command', {
-        command: 'groups',
-        args: []
-      });
+      const result = await platformAPI.executeCommand('groups', []);
 
       const inDockerGroup = result.toLowerCase().includes('docker');
 

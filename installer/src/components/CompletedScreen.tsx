@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { open } from '@tauri-apps/api/shell';
+import { platformAPI } from '../services/platformAPI';
 import type { InstallationStateData, InstallationState, PrerequisiteCheck } from '../types/installer';
 import { prerequisiteService } from '../services/prerequisiteService';
 
@@ -26,11 +26,10 @@ export default function CompletedScreen({ state, onMoveToNextState }: CompletedS
 
   const handleLaunchPlexArr = async () => {
     try {
-      // Use Tauri's shell API to open the URL in the system browser
-      await open('http://localhost:3000');
+      await platformAPI.openExternal('http://localhost:3000');
     } catch (error) {
       console.error('Failed to open URL:', error);
-      // Fallback to window.open if Tauri method fails
+      // Fallback to window.open if platform API fails
       window.open('http://localhost:3000', '_blank');
     }
   };

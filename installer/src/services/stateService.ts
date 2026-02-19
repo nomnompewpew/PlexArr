@@ -1,5 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri';
-import { readTextFile, writeTextFile, exists } from '@tauri-apps/api/fs';
+import { platformAPI } from './platformAPI';
 import type { InstallationStateData, InstallationState, SystemInfo, LinuxDistro } from '../types/installer';
 
 const STATE_FILE_NAME = 'installation-state.json';
@@ -23,8 +22,8 @@ export class StateService {
    */
   async loadState(): Promise<InstallationStateData> {
     try {
-      if (await exists(STATE_FILE_PATH)) {
-        const content = await readTextFile(STATE_FILE_PATH);
+      if (await platformAPI.exists(STATE_FILE_PATH)) {
+        const content = await platformAPI.readFile(STATE_FILE_PATH);
         const state = JSON.parse(content) as InstallationStateData;
         
         // Migrate state if version mismatch
@@ -47,7 +46,7 @@ export class StateService {
     state.version = STATE_VERSION;
 
     try {
-      await writeTextFile(STATE_FILE_PATH, JSON.stringify(state, null, 2));
+      await platformAPI.writeFile(STATE_FILE_PATH, JSON.stringify(state, null, 2));
     } catch (error) {
       console.error('Failed to save state:', error);
       throw new Error(`Failed to save installation state: ${error}`);
@@ -93,12 +92,7 @@ export class StateService {
    */
   private async getSystemInfo(): Promise<SystemInfo> {
     try {
-      const info = await invoke<{
-        platform: string;
-        arch: string;
-        os_version: string;
-        hostname: string;
-      }>('get_system_info');
+      const info = await platformAPI.getSystemInfo();
 
       const systemInfo: SystemInfo = {
         platform: info.platform as any,
@@ -133,7 +127,7 @@ export class StateService {
    */
   private async detectLinuxDistro(): Promise<{ distro: string; version: string }> {
     try {
-      const osReleaseContent = await readTextFile('/etc/os-release');
+      const osReleaseContent = await platformAPI.readFile('/etc/os-release');
       const lines = osReleaseContent.split('\n');
       
       let distro = 'unknown';

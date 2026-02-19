@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri';
+import { platformAPI } from './platformAPI';
 import type { SystemInfo } from '../types/installer';
 
 interface InstallationProgress {
@@ -31,10 +31,7 @@ export class InstallationService {
     
     try {
       // Try to write to file via a shell command
-      await invoke<string>('execute_command', {
-        command: 'bash',
-        args: ['-c', `echo "${logMessage.replace(/"/g, '\\"')}" >> ${this.logFile}`]
-      });
+      await platformAPI.executeCommand('bash', ['-c', `echo "${logMessage.replace(/"/g, '\\"')}" >> ${this.logFile}`]);
     } catch {
       // If logging fails, just continue
       console.error(`Failed to log to ${this.logFile}`);
@@ -134,10 +131,7 @@ export class InstallationService {
     try {
       // First try non-interactive sudo (might already be cached)
       await this.log('Attempting non-interactive sudo (sudo -n true)...');
-      await invoke<string>('execute_command', {
-        command: 'sudo',
-        args: ['-n', 'true']
-      });
+      await platformAPI.executeCommand('sudo', ['-n', 'true']);
       await this.log('Sudo already cached, no password needed');
       return; // Already authenticated
     } catch {
@@ -151,10 +145,7 @@ export class InstallationService {
       const escapedPassword = password.replace(/\\/g, '\\\\').replace(/\$/g, '\\$').replace(/`/g, '\\`');
       
       try {
-        await invoke<string>('execute_command', {
-          command: 'bash',
-          args: ['-c', `echo "${escapedPassword}" | sudo -S -v`]
-        });
+        await platformAPI.executeCommand('bash', ['-c', `echo "${escapedPassword}" | sudo -S -v`]);
         await this.log('Sudo pre-authentication successful!');
       } catch (err) {
         await this.log(`Sudo pre-authentication failed: ${err}`);
@@ -186,10 +177,7 @@ export class InstallationService {
     // Always do a fresh clone - remove old clone if it exists
     try {
       await this.log(`Removing old clone directory: ${clonePath}...`);
-      await invoke<string>('execute_command', {
-        command: 'rm',
-        args: ['-rf', clonePath]
-      });
+      await platformAPI.executeCommand('rm', ['-rf', clonePath]);
       await this.log('Old clone directory removed');
     } catch {
       // Directory might not exist, that's fine
@@ -199,10 +187,7 @@ export class InstallationService {
     // Clone from GitHub
     try {
       await this.log('Cloning PlexArr from GitHub (nomnompewpew/PlexArr)...');
-      const result = await invoke<string>('execute_command', {
-        command: 'git',
-        args: ['clone', '--depth', '1', 'https://github.com/nomnompewpew/PlexArr.git', clonePath]
-      });
+      const result = await platformAPI.executeCommand('git', ['clone', '--depth', '1', 'https://github.com/nomnompewpew/PlexArr.git', clonePath]);
       await this.log(`Git clone completed: ${result}`);
       return clonePath;
     } catch (error) {
@@ -218,43 +203,28 @@ export class InstallationService {
     if (systemInfo.platform === 'windows') {
       // Windows: Create directory and copy
       try {
-        await invoke<string>('execute_command', {
-          command: 'cmd',
-          args: ['/c', `mkdir "${installPath}" 2>nul`]
-        });
+        await platformAPI.executeCommand('cmd', ['/c', `mkdir "${installPath}" 2>nul`]);
       } catch {
         // Directory may exist
       }
 
-      await invoke<string>('execute_command', {
-        command: 'cmd',
-        args: ['/c', `xcopy "${sourcePath}" "${installPath}" /E /I /Y`]
-      });
+      await platformAPI.executeCommand('cmd', ['/c', `xcopy "${sourcePath}" "${installPath}" /E /I /Y`]);
       return;
     }
 
     // For Linux/macOS, we need to handle permissions properly
-    const username = await invoke<string>('execute_command', {
-      command: 'whoami',
-      args: []
-    });
+    const username = await platformAPI.executeCommand('whoami', []);
     const user = username.trim();
 
     // STEP 0: Stop any existing PlexArr containers if they're running
     try {
       await this.log('Checking for existing PlexArr containers...');
-      const psOutput = await invoke<string>('execute_command', {
-        command: 'docker',
-        args: ['ps', '--filter', 'name=plexarr', '--format', '{{.Names}}']
-      });
+      const psOutput = await platformAPI.executeCommand('docker', ['ps', '--filter', 'name=plexarr', '--format', '{{.Names}}']);
       
       if (psOutput && psOutput.toLowerCase().includes('plexarr')) {
         await this.log('Found existing PlexArr containers, stopping them...');
         try {
-          await invoke<string>('execute_command', {
-            command: 'docker',
-            args: ['stop', '-t', '10', 'plexarr-backend', 'plexarr-frontend']
-          });
+          await platformAPI.executeCommand('docker', ['stop', '-t', '10', 'plexarr-backend', 'plexarr-frontend']);
           await this.log('Stopped existing PlexArr containers');
         } catch (err) {
           await this.log(`Warning: Could not stop containers: ${err}`);
@@ -269,10 +239,7 @@ export class InstallationService {
     // Clean up old installation directory with sudo
     try {
       await this.log(`Checking if old installation exists at ${installPath}...`);
-      await invoke<string>('execute_command', {
-        command: 'test',
-        args: ['-d', installPath]
-      });
+      await platformAPI.executeCommand('test', ['-d', installPath]);
       // Directory exists, remove it with sudo
       await this.log(`Removing old installation at ${installPath}...`);
       await this.runSudoCommand('rm', ['-rf', installPath]);
@@ -302,18 +269,12 @@ export class InstallationService {
       await this.log('Copying PlexArr files...');
       // Use rsync if available, otherwise cp
       try {
-        await invoke<string>('execute_command', {
-          command: 'rsync',
-          args: ['-av', '--delete', sourcePath + '/', installPath + '/']
-        });
+        await platformAPI.executeCommand('rsync', ['-av', '--delete', sourcePath + '/', installPath + '/']);
         await this.log('File copy completed with rsync');
       } catch {
         // Fallback to cp
         await this.log('rsync not available, falling back to cp...');
-        await invoke<string>('execute_command', {
-          command: 'cp',
-          args: ['-r', sourcePath + '/.', installPath + '/']
-        });
+        await platformAPI.executeCommand('cp', ['-r', sourcePath + '/.', installPath + '/']);
         await this.log('File copy completed with cp');
       }
     } catch (error) {
@@ -335,10 +296,7 @@ export class InstallationService {
     const argsStr = args.map(arg => `"${arg.replace(/"/g, '\\"')}"`).join(' ');
     const fullCmd = `echo "${escapedPassword}" | sudo -S ${command} ${argsStr}`;
     
-    return await invoke<string>('execute_command', {
-      command: 'bash',
-      args: ['-c', fullCmd]
-    });
+    return await platformAPI.executeCommand('bash', ['-c', fullCmd]);
   }
 
   /**
@@ -352,10 +310,7 @@ export class InstallationService {
 
     try {
       // Get current username
-      const username = await invoke<string>('execute_command', {
-        command: 'whoami',
-        args: []
-      });
+      const username = await platformAPI.executeCommand('whoami', []);
       const user = username.trim();
 
       // Make the directory world-readable for docker
@@ -383,10 +338,7 @@ export class InstallationService {
     // Verify docker-compose file exists
     try {
       await this.log('Verifying docker-compose.yml exists...');
-      await invoke<string>('execute_command', {
-        command: 'test',
-        args: ['-f', composeFile]
-      });
+      await platformAPI.executeCommand('test', ['-f', composeFile]);
       await this.log('docker-compose.yml found!');
     } catch {
       await this.log(`docker-compose.yml NOT found at: ${composeFile}`);
@@ -398,10 +350,7 @@ export class InstallationService {
     try {
       // Try without sudo first
       await this.log('Attempting docker compose without sudo...');
-      const result = await invoke<string>('execute_command', {
-        command: 'nohup',
-        args: ['docker', 'compose', '-f', composeFile, 'up', '--build', '-d']
-      });
+      const result = await platformAPI.executeCommand('nohup', ['docker', 'compose', '-f', composeFile, 'up', '--build', '-d']);
       await this.log(`Docker compose started (no sudo needed): ${result}`);
     } catch {
       // If that fails, try with sudo
@@ -409,10 +358,7 @@ export class InstallationService {
         await this.log('Docker compose without sudo failed, trying with sudo...');
         const password = await this.getPassword();
         const escapedPassword = password.replace(/\\/g, '\\\\').replace(/\$/g, '\\$').replace(/`/g, '\\`');
-        const result = await invoke<string>('execute_command', {
-          command: 'bash',
-          args: ['-c', `echo "${escapedPassword}" | sudo -S nohup docker compose -f ${composeFile} up --build -d > /dev/null 2>&1 &`]
-        });
+        const result = await platformAPI.executeCommand('bash', ['-c', `echo "${escapedPassword}" | sudo -S nohup docker compose -f ${composeFile} up --build -d > /dev/null 2>&1 &`]);
         await this.log(`Docker compose started (with sudo): ${result}`);
       } catch (err) {
         await this.log(`Failed to start Docker services: ${err}`);
@@ -434,10 +380,7 @@ export class InstallationService {
     while (attempts < maxAttempts) {
       try {
         // Check if plexarr-backend container is running (primary service)
-        const psOutput = await invoke<string>('execute_command', {
-          command: 'docker',
-          args: ['ps', '--filter', 'name=plexarr-backend', '--format', '{{.Names}}']
-        });
+        const psOutput = await platformAPI.executeCommand('docker', ['ps', '--filter', 'name=plexarr-backend', '--format', '{{.Names}}']);
 
         if (psOutput && psOutput.toLowerCase().includes('plexarr-backend')) {
           await this.log(`Container plexarr-backend found! Output: "${psOutput.trim()}"`);

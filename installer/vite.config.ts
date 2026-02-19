@@ -22,4 +22,18 @@ export default defineConfig({
   
   // For Electron integration
   base: './',
+  
+  // Make Tauri packages optional (for backwards compatibility)
+  optimizeDeps: {
+    exclude: ['@tauri-apps/api'],
+  },
+  
+  resolve: {
+    alias: {
+      // Stub Tauri imports when not available
+      '@tauri-apps/api/tauri': '/src/stubs/tauri-stub.ts',
+      '@tauri-apps/api/fs': '/src/stubs/tauri-stub.ts',
+      '@tauri-apps/api/shell': '/src/stubs/tauri-stub.ts',
+    }
+  }
 });
