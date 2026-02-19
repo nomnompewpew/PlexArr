@@ -42,7 +42,6 @@ services:
 
 networks:
   plexarr_default:
-    external: true
 
 x-dockge:
   urls: []
