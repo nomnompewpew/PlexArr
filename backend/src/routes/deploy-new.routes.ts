@@ -14,6 +14,19 @@ import StackManager from '../services/stack-manager.service';
 const execAsync = promisify(exec);
 const router = Router();
 
+// Allowlist of valid Docker service names managed by PlexArr
+const VALID_SERVICE_NAMES = new Set([
+  'plex', 'radarr', 'sonarr', 'lidarr', 'prowlarr',
+  'overseerr', 'maintainerr', 'nzbget', 'nzbget-music',
+  'qbittorrent', 'metube', 'nginx-proxy-manager', 'wireguard',
+]);
+
+function isValidServiceName(name: string): boolean {
+  // The allowlist is the primary check; the regex adds defence-in-depth by
+  // rejecting names with shell metacharacters even if the set were to grow.
+  return /^[a-z0-9][a-z0-9-]*$/.test(name) && VALID_SERVICE_NAMES.has(name);
+}
+
 // Stack manager instance (will be initialized based on config)
 let stackManager: StackManager;
 
@@ -124,7 +137,16 @@ router.get('/status', async (_req: Request, res: Response) => {
 router.get('/logs/:serviceName', async (req: Request, res: Response) => {
   try {
     const { serviceName } = req.params;
-    const tail = parseInt(req.query.tail as string) || 100;
+
+    if (!isValidServiceName(serviceName)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid service name: ${serviceName}`,
+      });
+    }
+
+    const tailRaw = parseInt(req.query.tail as string, 10);
+    const tail = Number.isFinite(tailRaw) ? Math.min(Math.max(tailRaw, 1), 1000) : 100;
 
     if (!stackManager) {
       stackManager = new StackManager();
@@ -156,7 +178,8 @@ router.get('/logs/:serviceName', async (req: Request, res: Response) => {
 // GET /api/deploy-new/logs - get logs for all services in stack
 router.get('/logs', async (req: Request, res: Response) => {
   try {
-    const tail = parseInt(req.query.tail as string) || 100;
+    const tailRaw = parseInt(req.query.tail as string, 10);
+    const tail = Number.isFinite(tailRaw) ? Math.min(Math.max(tailRaw, 1), 1000) : 100;
 
     if (!stackManager) {
       stackManager = new StackManager();
@@ -251,7 +274,14 @@ router.post('/coordinate', async (req: Request, res: Response) => {
 // GET /api/deploy-new/credentials/:serviceName - retrieve default credentials from Docker logs
 router.get('/credentials/:serviceName', async (req: Request, res: Response) => {
   const serviceName = req.params.serviceName;
-  
+
+  if (!isValidServiceName(serviceName)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid service name: ${serviceName}`,
+    });
+  }
+
   try {
     // Get Docker logs for the service container
     const containerName = `plexarr-${serviceName}`;
