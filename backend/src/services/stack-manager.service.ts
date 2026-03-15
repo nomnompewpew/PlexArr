@@ -109,8 +109,8 @@ export class StackManager {
     const composePath = this.getComposePath();
     const stackPath = this.getStackPath();
 
-    // Build the full command
-    const fullCommand = `docker compose -f ${composePath} ${command} ${args.join(' ')}`;
+    // Build the full command with quoted paths to prevent shell injection
+    const fullCommand = `docker compose -f "${composePath}" ${command} ${args.join(' ')}`;
 
     console.log(`[StackManager] Executing: ${fullCommand}`);
     console.log(`[StackManager] CWD: ${stackPath}`);
@@ -135,16 +135,20 @@ export class StackManager {
    * Create the external network if it doesn't exist
    */
   async ensureNetwork(networkName: string = 'plexarr_default'): Promise<void> {
+    // Validate the network name to only allow safe characters
+    if (!/^[a-zA-Z0-9_-]+$/.test(networkName)) {
+      throw new Error(`Invalid network name: ${networkName}`);
+    }
     try {
       // Check if network exists
-      const { stdout } = await execAsync(
-        `docker network inspect ${networkName}`
+      await execAsync(
+        `docker network inspect "${networkName}"`
       );
       console.log(`[StackManager] Network ${networkName} already exists`);
     } catch {
       // Network doesn't exist, create it
       console.log(`[StackManager] Creating network ${networkName}...`);
-      await execAsync(`docker network create ${networkName}`);
+      await execAsync(`docker network create "${networkName}"`);
     }
   }
 
@@ -337,6 +341,11 @@ export class StackManager {
 
     // Create directories using docker exec (since we're in a container)
     for (const dir of directories) {
+      // Validate path: must be absolute and contain only safe characters
+      if (!/^\/[\w/._-]*$/.test(dir)) {
+        console.error(`[StackManager] Skipping directory with invalid path: ${dir}`);
+        continue;
+      }
       try {
         // Use docker to create directories on host with correct permissions
         await execAsync(

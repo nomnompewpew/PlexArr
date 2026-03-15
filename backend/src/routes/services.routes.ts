@@ -24,7 +24,12 @@ router.post('/test', async (req: Request, res: Response) => {
     return res.json({ success: false, message: `Unknown service: ${service}` });
   }
 
-  const { url, validate } = check(port);
+  const portNum = parseInt(port, 10);
+  if (!Number.isFinite(portNum) || portNum < 1 || portNum > 65535) {
+    return res.status(400).json({ success: false, message: 'Invalid port number' });
+  }
+
+  const { url, validate } = check(portNum);
   try {
     const headers: Record<string, string> = {};
     if (apiKey) headers['X-Api-Key'] = apiKey;

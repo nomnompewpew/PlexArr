@@ -31,7 +31,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  const safePath = req.path.replace(/[\r\n]/g, '');
+  console.log(`${new Date().toISOString()} - ${req.method} ${safePath}`);
   next();
 });
 
